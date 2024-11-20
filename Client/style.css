@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.tabs {
+    display: flex;
+    background-color: #333;
+    color: white;
+}
+
+.tabs button {
+    background-color: #333;
+    color: white;
+    padding: 15px;
+    border: none;
+    text-align: center;
+    flex: 1;
+    cursor: pointer;
+}
+
+.tabs button:hover {
+    background-color: #575757;
+}
+
+.tabs button.active {
+    background-color: #888;
+}
+
+.viewing-window {
+    padding: 20px;
+    border: 1px solid #ddd;
+    margin-top: 20px;
+    min-height: 200px;
+}
+
+#content-1, #content-2, #content-3, #content-4 {
+    display: none;
+}
+
+#content-1.active, #content-2.active, #content-3.active, #content-4.active {
+    display: block;
+}

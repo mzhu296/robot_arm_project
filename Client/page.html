@@ -3,14 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team 21 Mechanical arm</title>
+    <title>Team 21 Mechanical Arm - Tabs</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Team 21 Mechanical arm</h1>
-    <input type="text" placeholder="Enter command here" />
-    <br>
-    <button>Enter Command</button>
-    <br>
-    <button>Close Application</button>
+
+    <h1>Team 21 Mechanical Arm</h1>
+
+    <div class="tabs">
+        <button class="tab-button" onclick="changeTab(1)">Tab 1</button>
+        <button class="tab-button" onclick="changeTab(2)">Tab 2</button>
+        <button class="tab-button" onclick="changeTab(3)">Tab 3</button>
+        <button class="tab-button" onclick="changeTab(4)">Tab 4</button>
+    </div>
+
+    <div class="viewing-window">
+        <div id="content-1" class="tab-content">
+            <h2>Content for Tab 1</h2>
+            <p>This is the content for Tab 1. It could be any content relevant to your app.</p>
+        </div>
+        <div id="content-2" class="tab-content">
+            <h2>Content for Tab 2</h2>
+            <p>This is the content for Tab 2. You can display other information here.</p>
+        </div>
+        <div id="content-3" class="tab-content">
+            <h2>Content for Tab 3</h2>
+            <p>This is the content for Tab 3. You can put something different here as well.</p>
+        </div>
+        <div id="content-4" class="tab-content">
+            <h2>Content for Tab 4</h2>
+            <p>This is the content for Tab 4. Feel free to modify this as needed.</p>
+        </div>
+    </div>
+
+    <script src="actions.js"></script>
 </body>
 </html>
