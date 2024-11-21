@@ -4,14 +4,40 @@ body {
     padding: 0;
 }
 
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #f1f1f1; /* Light gray background for header */
+}
+
+h1 {
+    margin: 0;
+}
+
+.send-feedback-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50; /* Green color */
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.send-feedback-button:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
 .tabs {
     display: flex;
-    background-color: #333;
+    background-color: cyan;
     color: white;
 }
 
 .tabs button {
-    background-color: #333;
+    background-color: cyan;
     color: white;
     padding: 15px;
     border: none;
@@ -21,11 +47,11 @@ body {
 }
 
 .tabs button:hover {
-    background-color: #575757;
+    background-color: lightblue;
 }
 
 .tabs button.active {
-    background-color: #888;
+    background-color: lightblue;
 }
 
 .viewing-window {
