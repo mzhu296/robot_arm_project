@@ -17,4 +17,4 @@ function changeTab(tabNumber) {
 // Set default tab to 1 when the page loads
 window.onload = function() {
     changeTab(1);
-}
+} 
