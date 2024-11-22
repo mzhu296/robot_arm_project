@@ -26,7 +26,47 @@
     <div class="viewing-window">
         <div id="content-1" class="tab-content">
             <h2>Arm Configuration</h2>
-            <p>This tab is used for configuring the settings of the arm. Here, you can set up the preferences of the arm.</p>
+            <p>Welcome to the configuration menu! Which source would you like to work with?</p>
+            <div class="sidebar">
+                <button class="sidebar-button" onclick="changeMotorTab(1)">Power Source</button>
+                <button class="sidebar-button" onclick="changeMotorTab(2)">Motors</button>
+                <button class="sidebar-button" onclick="changeMotorTab(3)">Encoding</button>
+                <button class="sidebar-button" onclick="changeMotorTab(4)">Control Nodes</button>
+            </div>
+            <div id="motor-1" class="motor-content"> <!-- Currently using filler values, while be giving real values later-->
+                <p>DC Bus overvoltage trip level: 30 V</p>
+                <p>DC Bus undervoltage trip level: 10 V </p>
+                <p>DC max positive voltage: 20 A </p>
+                <p>DC max negative voltage: -0.1 A</p>
+
+                <!-- Add the checkbox for brake resistance -->
+                <label>
+                    <input type="checkbox" id="apply-brake-resistance" onclick="toggleBrakeResistance()">Apply Brake Resistance?
+                </label>
+                <!-- The text input for Brake Resistance that will be hidden initially -->
+                <div id="brake-resistance-container" style="display: none;">
+                    <label for="brake-resistance">Brake Resistance (in ohms): </label>
+                    <input type="text" id="brake-resistance" placeholder="Enter resistance value">
+                </div>
+
+            </div>
+            <div id="motor-2" class="motor-content">
+                <p>Status and Configuration of Motor 2</p>
+            </div>
+            <div id="motor-3" class="motor-content">
+                <p>Status and Configuration of Motor 3</p>
+            </div>
+            <div id="motor-4" class="motor-content">
+                <p>Status and Configuration of Motor 4</p>
+            </div>
+        
+            <!-- Apply changes Button -->
+            <div class="changes">
+                <div class="save-changes-box">
+                    <button class="save-changes-button">Apply Device Changes</button>
+                </div>
+            </div>
+
         </div>
         <div id="content-2" class="tab-content">
             <h2>Movement Practice</h2>
@@ -41,8 +81,9 @@
             <p>Welcome!. Here you can learn more about our team and what our goal is.</p>
         </div>
     </div>
+    
 
-     <!-- Connection tab with a small grey rectangle and red button -->
+     <!-- Connection tab -->
     <div class="connection">
         <div class="device-connection-box">
             <button class="connect-device-button">Connect a Device</button>

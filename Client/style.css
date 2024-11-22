@@ -71,6 +71,41 @@ h1 {
     display: block;
 }
 
+/* Sidebar for Configuration */
+.sidebar {
+    display: inline-block;
+    width: 200px;
+    vertical-align: top;
+    margin-right: 20px;
+}
+
+.sidebar-button {
+    display: block;
+    padding: 10px;
+    background-color: #f1f1f1;
+    color: black;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+}
+
+.sidebar-button:hover {
+    background-color: lightblue;
+}
+
+.motor-content {
+    display: none;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    margin-top: 10px;
+}
+
+.motor-content.active {
+    display: block;
+}
+
 /* Styling for the connection box */
 .connection {
     position: fixed; /* Fix the position to the bottom of the page */
@@ -101,7 +136,30 @@ h1 {
     cursor: pointer;
     transition: background-color 0.3s;
 }
-
+.save-changes-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
 .connect-device-button:hover {
     background-color: #d80000; /* Darker red on hover */
+}
+
+/* Styling for the brake resistance input */
+#brake-resistance-container {
+    margin-top: 10px;
+    display: none;
+}
+
+#brake-resistance-container label {
+    margin-right: 10px;
+}
+
+#brake-resistance {
+    padding: 5px;
+    width: 200px;
 }
