@@ -51,3 +51,48 @@ function toggleBrakeResistance() {
         brakeResistanceContainer.style.display = 'none';
     }
 }
+
+// Function to create a grid for each axis (X, Y, Z)
+function createGrid(gridId) {
+    const gridContainer = document.getElementById(gridId);
+    const rows = 5;
+    const cols = 5;
+
+    // Variable to keep track of the most recently clicked square
+    let lastClickedSquare = null;
+
+    // Create the grid cells dynamically
+    for (let i = 0; i < rows * cols; i++) {
+        const gridItem = document.createElement('div');
+        gridItem.classList.add('grid-item');
+
+        // Add a click event to toggle the active state
+        gridItem.addEventListener('click', () => {
+            // If there was a previously clicked square, remove its highlight
+            if (lastClickedSquare) {
+                lastClickedSquare.classList.remove('active');
+            }
+
+            // Highlight the newly clicked square
+            gridItem.classList.add('active');
+            
+            // Update the last clicked square reference
+            lastClickedSquare = gridItem;
+        });
+
+        // Check if it's the center of the grid (index 12 in a 5x5 grid)
+        if (i === 12) {
+            gridItem.classList.add('current-position');
+            gridItem.innerHTML = 'Current Position'; // Add label to center
+        }
+
+        gridContainer.appendChild(gridItem);
+    }
+}
+
+// Initialize the grids on page load
+document.addEventListener('DOMContentLoaded', () => {
+    createGrid('x-axis-grid');
+    createGrid('y-axis-grid');
+    createGrid('z-axis-grid');
+});

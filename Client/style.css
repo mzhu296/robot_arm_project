@@ -183,3 +183,29 @@ h1 {
     padding: 5px;
     width: 200px;
 }
+
+/* Style for each grid container */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(5, 50px); /* Change this to adjust number of columns */
+    grid-template-rows: repeat(5, 50px);    /* Change this to adjust number of rows */
+    gap: 2px;
+    margin: 20px 0;
+}
+
+/* Style for individual grid items */
+.grid-item {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Style for grid item when it's clicked (interactive effect) */
+.grid-item.active {
+    background-color: #4CAF50; /* Example color when clicked */
+}
