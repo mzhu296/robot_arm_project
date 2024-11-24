@@ -184,6 +184,21 @@ h1 {
     width: 200px;
 }
 
+/* Styling for the brake resistance input */
+#timer-container {
+    margin-top: 10px;
+    display: none;
+}
+
+#timer-container label {
+    margin-right: 10px;
+}
+
+#timer-value {
+    padding: 5px;
+    width: 200px;
+}
+
 /* Style for each grid container */
 .grid-container {
     display: grid;
@@ -208,4 +223,20 @@ h1 {
 /* Style for grid item when it's clicked (interactive effect) */
 .grid-item.active {
     background-color: #4CAF50; /* Example color when clicked */
+}
+
+/* Style for the customize button */
+.customize-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+}
+
+.customize-button:hover {
+    background-color: #d80000; /* Darker red on hover */
 }

@@ -52,6 +52,19 @@ function toggleBrakeResistance() {
     }
 }
 
+// Toggle the visibility of the timer input field
+function toggleTimer() {
+    const checkbox = document.getElementById('apply-timer-value');
+    const timerContainer = document.getElementById('timer-container');
+    
+    // Show or hide the Brake Resistance input based on the checkbox state
+    if (checkbox.checked) {
+        timerContainer.style.display = 'block';
+    } else {
+        timerContainer.style.display = 'none';
+    }
+}
+
 // Function to create a grid for each axis (X, Y, Z)
 function createGrid(gridId) {
     const gridContainer = document.getElementById(gridId);
@@ -96,3 +109,39 @@ document.addEventListener('DOMContentLoaded', () => {
     createGrid('y-axis-grid');
     createGrid('z-axis-grid');
 });
+
+function showCustomizeButton1(selectedMotor) {
+    const customizeButtonContainer = document.getElementById('customize-button-container1');
+    const customizeButton = document.getElementById('customize-button1');
+
+    // Show the Customize/Create button container
+    customizeButtonContainer.style.display = 'block';
+
+    // Change the button text based on selection
+    if (selectedMotor === 'other') {
+        customizeButton.innerHTML = 'Create Other Motor'; // If "Other" is selected, show "Create Other"
+    } else {
+        customizeButton.innerHTML = `Customize ${selectedMotor}`; // If a motor is selected, show "Customize"
+    }
+}
+
+function showCustomizeButton2(selectedEncoder) {
+    const customizeButtonContainer = document.getElementById('customize-button-container2');
+    const customizeButton = document.getElementById('customize-button2');
+
+    // Show the Customize/Create button container
+    customizeButtonContainer.style.display = 'block';
+
+    // Change the button text based on selection
+    if (selectedEncoder === 'other') {
+        customizeButton.innerHTML = 'Create Other Encoder'; // If "Other" is selected, show "Create Other"
+    } else {
+        customizeButton.innerHTML = `Customize ${Encoder}`; // If a motor is selected, show "Customize"
+    }
+}
+
+
+function customizeMotor() {
+    // This function can be expanded to perform actions when the customize button is clicked
+    alert('You can now customize your motor!');
+}

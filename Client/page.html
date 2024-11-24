@@ -50,14 +50,97 @@
                 </div>
 
             </div>
+
+            <!--Motor work menu-->
             <div id="motor-2" class="motor-content">
-                <p>Status and Configuration of Motor 2</p>
+                <h2>Status and Configuration of Motors</h2>
+                <p>Select a motor to customize:</p>
+                
+                <!-- Multiple Choice Options for Motors -->
+                <form id="motor-selection-form">
+                    <label>
+                        <input type="radio" name="motor" value="D5065" onclick="showCustomizeButton1('D5065')">
+                        D5065
+                    </label><br>
+                    <label>
+                        <input type="radio" name="motor" value="M8325" onclick="showCustomizeButton1('M8325')">
+                        M8325
+                    </label><br>
+                    <label>
+                        <input type="radio" name="motor" value="Botwheel" onclick="showCustomizeButton1('Botwheel')">
+                        Botwheel
+                    </label><br>
+                    <label>
+                        <input type="radio" name="motor" value="other" onclick="showCustomizeButton1('other')">
+                        other
+                    </label><br>
+                </form>
+            
+                <!-- Customize button for selected motor -->
+                <div id="customize-button-container1" style="display: none;">
+                    <button id="customize-button1" class="customize-button" onclick="customizeMotor()">Customize</button>
+                </div>
             </div>
+
+            <!--The encoding menu -->
             <div id="motor-3" class="motor-content">
-                <p>Status and Configuration of Motor 3</p>
+                <p>Encoding menu:</p>
+                <p>Select an encoder for use:</p>
+                
+                <!-- Multiple Choice Options for Motors -->
+                <form id="encoder-selection-form">
+                    <label>
+                        <input type="radio" name="encoder" value="AMT 10x" onclick="showCustomizeButton2('AMT 10x')">
+                        AMT 10x
+                    </label><br>
+                    <label>
+                        <input type="radio" name="encoder" value="AMT21xB" onclick="showCustomizeButton2('AMT21xB')">
+                        AMT21xB
+                    </label><br>
+                    <label>
+                        <input type="radio" name="encoder" value="Hail Encoder" onclick="showCustomizeButton2('Hail Encoder')">
+                        Hail Encoder
+                    </label><br>
+                    <label>
+                        <input type="radio" name="encoder" value="Incremental Encoder" onclick="showCustomizeButton2('Incremental Encoder')">
+                        Incremental Encoder
+                    </label><br>
+                    <label>
+                        <input type="radio" name="encoder" value="other" onclick="showCustomizeButton2('other')">
+                        Other Encoder
+                    </label><br>
+                </form>
+            
+                <!-- Customize button for selected motor -->
+                <div id="customize-button-container2" style="display: none;">
+                    <button id="customize-button2" class="customize-button" onclick="customizeMotor()">Customize</button>
+                </div>
             </div>
+
+
+
             <div id="motor-4" class="motor-content">
-                <p>Status and Configuration of Motor 4</p>
+                <p>Status and Configuration of Control Nodes </p>
+                <h3>Connections:</h3>
+                <P>Power Source: USB</P>
+                <P>Input Source: USB </P>
+                <h3>Control Paramters:</h3>
+                <p>Velocity:
+                <input type="text" id="velocityValue" placeholder="In turns per second">
+                </p>
+                <p>Torque limit:
+                <input type="text" id="torqueValue" placeholder="In Nm ">
+                </p>
+                <p></p>
+                <label>
+                    <input type="checkbox" id="apply-timer-value" onclick="toggleTimer()">Enable Timer
+                </label>
+                <!-- The text input for Brake Resistance that will be hidden initially -->
+                <div id="timer-container" style="display: none;">
+                    <label for="timer-value">Timer value (in seconds): </label>
+                    <input type="text" id="timer_value" placeholder="Enter timer value">
+                </div>
+
             </div>
         
             <!-- Apply changes Button -->
@@ -74,14 +157,17 @@
             <!-- Grid movements-->
              <!-- X-axis movement -->
             <h3>X-axis movement:</h3>
+            <h4>Control the X axis level of the arm</h4>
             <div class="grid-container" id="x-axis-grid"></div>
 
             <!-- Y-axis movement -->
             <h3>Y-axis movement:</h3>
+            <h4>Control the Y axis level of the arm</h4>
             <div class="grid-container" id="y-axis-grid"></div>
 
             <!-- Z-axis movement -->
             <h3>Z-axis movement:</h3>
+            <h4>Control the Z axis level of the arm</h4>
             <div class="grid-container" id="z-axis-grid"></div>
 
 
