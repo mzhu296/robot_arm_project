@@ -136,7 +136,7 @@ function showCustomizeButton2(selectedEncoder) {
     if (selectedEncoder === 'other') {
         customizeButton.innerHTML = 'Create Other Encoder'; // If "Other" is selected, show "Create Other"
     } else {
-        customizeButton.innerHTML = `Customize ${Encoder}`; // If a motor is selected, show "Customize"
+        customizeButton.innerHTML = `Customize ${selectedEncoder}`; // If a motor is selected, show "Customize"
     }
 }
 
