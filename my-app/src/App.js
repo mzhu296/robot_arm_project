@@ -3,7 +3,7 @@ import './style.css';
 import Tabs from './components/Tabs';
 import Sidebar from './components/Sidebar';
 import Grid from './components/Grid';
-//import MotorContent from './components/MotorContent';
+import MotorContent from './components/MotorContent';
 import Spline from '@splinetool/react-spline';
 
 
@@ -31,7 +31,7 @@ function App() {
             <div className="viewing-window">
                 {activeTab === 1 && <Sidebar />}
                 {activeTab === 2 && <Grid />}
-                {/**activeTab === 3 && <MotorContent />/**/}
+                {activeTab === 3 && <MotorContent />}
                 {activeTab === 4 && <div><h2>Our Team</h2><p>Welcome to our team page!</p></div>}
             </div>
             <footer className="connection">
