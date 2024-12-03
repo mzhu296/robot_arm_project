@@ -7,11 +7,10 @@ import PowerButton from '../subComponents/PowerButton'
 import SocialIcons from '../subComponents/SocialIcons'
 import { YinYang } from './AllSvgs'
 import Intro from './Intro'
-;
-
+import ArmImage from '../assets/Images/ArmImage3.jpeg'; // Import the background image
 
 const MainContainer = styled.div`
-background: ${props => props.theme.body};
+ background: ${props => props.theme.body} url(${ArmImage}) no-repeat center center fixed;
 width: 100vw;
 height: 100vh;
 overflow:hidden;
@@ -72,7 +71,7 @@ color: ${props => props.click ? props.theme.body : props.theme.text};
 text-decoration: none;
 z-index:1;
 `
-const SKILLS = styled(NavLink)`
+const ROBOTS = styled(NavLink)`
 color: ${props => props.theme.text};
 text-decoration: none;
 z-index:1;
@@ -89,8 +88,8 @@ to{
 
 const Center = styled.button`
 position: absolute;
-top: ${props => props.click ? '85%' :'50%'  };
-left: ${props => props.click ? '92%' :'50%'  };
+top: ${props => props.click ? '85%' :'54%'  };
+left: ${props => props.click ? '50%' :'73%'  };
 transform: translate(-50%,-50%);
 border: none;
 outline: none;
@@ -141,7 +140,12 @@ const Main = () => {
             <SocialIcons theme={click ? 'dark' :'light'} />
            
             <Center click={click}>
-                <YinYang  onClick={()=> handleClick()} width={click ? 120 : 200} height={click ? 120 : 200} fill='currentColor' />
+            <YinYang
+                    onClick={() => handleClick()}
+                    width={click ? 120 : 200}
+                    height={click ? 120 : 200}
+                    fill="#cccccc"
+                    />
                 <span>click here</span>
             </Center>
 
@@ -175,7 +179,7 @@ const Main = () => {
                 whileHover={{scale: 1.1}}
                 whileTap={{scale: 0.9}}
                 >
-                    Blog
+                    configuration
                 </motion.h2>
             </BLOG>
             <WORK to="/work" click={+click}>
@@ -191,7 +195,7 @@ const Main = () => {
                  whileHover={{scale: 1.1}}
                 whileTap={{scale: 0.9}}
                 >
-                    Work
+                    Work progress
                 </motion.h2>
             </WORK>
             <BottomBar>
@@ -208,10 +212,10 @@ const Main = () => {
                  whileHover={{scale: 1.1}}
                 whileTap={{scale: 0.9}}
                 >
-                    About.
+                    About our team
                 </motion.h2>
             </ABOUT>
-            <SKILLS to="/skills">
+            <ROBOTS to="/robot">
                 <motion.h2
                 initial={{
                     y:200,
@@ -224,9 +228,9 @@ const Main = () => {
                  whileHover={{scale: 1.1}}
                 whileTap={{scale: 0.9}}
                 >
-                    My Skills.
+                    Robot control
                 </motion.h2>
-            </SKILLS>
+            </ROBOTS>
 
             </BottomBar>
 
