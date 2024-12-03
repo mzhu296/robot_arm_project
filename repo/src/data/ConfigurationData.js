@@ -6,7 +6,7 @@ export const Configurations = [
         name:"",
         tags:[""],
         date:"13 May, 2021",
-        imgSrc:"",
+        imgSrc:"../assets/Images/bottom.png",
         link:""
     },
   

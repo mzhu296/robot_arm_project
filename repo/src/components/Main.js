@@ -163,7 +163,7 @@ const Main = () => {
                 whileTap={{scale: 0.9}}
                 
                 >
-                    Say hi..
+                    Team 21..
                 </motion.h2>
             </Contact>
             <CONFIGURATION to="/configuration">
