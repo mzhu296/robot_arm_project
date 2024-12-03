@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import React from "react";
-// import { NavLink } from 'react-router-dom'
 import styled from "styled-components";
 
 const Box = styled(motion.a)`
@@ -37,6 +36,7 @@ const Image = styled.div`
     border: 1px solid ${(props) => props.theme.body};
   }
 `;
+
 const Title = styled.h3`
   color: inherit;
   padding: 0.5rem 0;
@@ -49,12 +49,15 @@ const Title = styled.h3`
     border-bottom: 1px solid ${(props) => props.theme.body};
   }
 `;
+
 const HashTags = styled.div`
   padding: 0.5rem 0;
 `;
+
 const Tag = styled.span`
   padding-right: 0.5rem;
 `;
+
 const Date = styled.span`
   padding: 0.5rem 0;
 `;
@@ -75,17 +78,18 @@ const Item = {
   },
 };
 
-const ConfigurationComponent = (props) => {
-  const { name, tags, date, imgSrc, link } = props.configuration;
+const ConfigurationComponent = ({ configuration }) => {
+  const { name, tags, date, imgSrc, link } = configuration;
+
   return (
     <Container variants={Item}>
-      <Box target="_blank" href={`${link}`}>
-        <Image src={imgSrc} alt={name} />
+      <Box target="_blank" href={link}>
+        <Image img={imgSrc} />
         <Title>{name}</Title>
         <HashTags>
-          {tags.map((t, id) => {
-            return <Tag key={id}>#{t}</Tag>;
-          })}
+          {tags.map((t, id) => (
+            <Tag key={id}>#{t}</Tag>
+          ))}
         </HashTags>
         <Date>{date}</Date>
       </Box>
