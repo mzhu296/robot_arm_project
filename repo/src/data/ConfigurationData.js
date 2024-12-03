@@ -1,6 +1,6 @@
-// blog data
 
-export const Blogs = [
+
+export const Configurations = [
     {
         id:1,
         name:"",

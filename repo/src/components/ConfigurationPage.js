@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import img from "../assets/Images/patrick-tomasso-Oaqk7qqNh_c-unsplash.jpg"
+import img from "../assets/Images/fw2.jpg"
 import LogoComponent from '../subComponents/LogoComponent'
 import SocialIcons  from '../subComponents/SocialIcons'
 import PowerButton  from '../subComponents/PowerButton'
 
-import {Blogs} from '../data/BlogData';
-import BlogComponent from './BlogComponent'
+import {Configurations} from '../data/ConfigurationData';
+import ConfigurationComponent from './ConfigurationComponent'
 import AnchorComponent from '../subComponents/Anchor'
 import BigTitle from "../subComponents/BigTitlte"
 import { motion } from 'framer-motion'
@@ -56,7 +56,7 @@ const container = {
   
   }
 
-const BlogPage = () => {
+const ConfigurationPage = () => {
 
     const [numbers, setNumbers] = useState(0);
 
@@ -84,17 +84,17 @@ const BlogPage = () => {
 <Grid>
 
 {
-    Blogs.map(blog => {
-        return <BlogComponent key={blog.id} blog={blog} />
+    Configurations.map(configuration => {
+        return <ConfigurationComponent key={configuration.id} configuration={configuration} />
     })
 }
 </Grid>
 
 </Center>
-<BigTitle text="BLOG" top="5rem" left="5rem" />
+<BigTitle text="CONFIGURATION" top="5rem" left="5rem" />
             </Container>
         </MainContainer>
     )
 }
 
-export default BlogPage
+export default ConfigurationPage

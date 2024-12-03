@@ -9,7 +9,7 @@ import GlobalStyle from './globalStyles';
 // Components
 import Main from './components/Main';
 import AboutPage from './components/AboutPage';
-import BlogPage from './components/BlogPage';
+import ConfigurationPage from './components/ConfigurationPage';
 import WorkPage from './components/WorkPage';
 import RobotPageWrapper from './components/RobotPageWrapper';
 import SoundBar from './subComponents/SoundBar';
@@ -26,8 +26,8 @@ function App() {
       case '/about':
         document.title = 'About Page';
         break;
-      case '/blog':
-        document.title = 'Blog Page';
+      case '/configuration':
+        document.title = 'Configuration Page';
         break;
       case '/work':
         document.title = 'Work Page';
@@ -53,7 +53,7 @@ function App() {
           <Routes key={location.pathname} location={location}>
             <Route path="/" element={<Main />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/configuration" element={<ConfigurationPage />} />
             <Route path="/work" element={<WorkPage />} />
             <Route path="/robot" element={<RobotPageWrapper />} />
             <Route path="*" element={<Main />} />
