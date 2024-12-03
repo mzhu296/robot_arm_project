@@ -1,14 +1,59 @@
-
-import bottomImage from '../assets/Images/bottom.png';
-
 export const Configurations = [
     {
-        id:1,
-        name:"xx",
-        tags:["xx"],
-        date:"13 May, 2021",
-        imgSrc: bottomImage,
-        link:"xx"
+      id: 0,
+      name: "bottom",
+      tags: ["bottom"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/bottom.png"),
+      link: require("../assets/Images/bottom.png"),
     },
+    {
+      id: 1,
+      name: "joint1",
+      tags: ["joint1"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint1.png"),
+      link: require("../assets/Images/joint1.png"),
+    },
+    {
+      id: 2,
+      name: "joint2",
+      tags: ["joint2"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint2.png"),
+      link: require("../assets/Images/joint2.png"),
+    },
+    {
+      id: 3,
+      name: "joint3",
+      tags: ["joint3"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint3.png"),
+      link: require("../assets/Images/joint3.png"),
+    },
+    {
+      id: 4,
+      name: "joint4",
+      tags: ["joint4"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint4.png"),
+      link: require("../assets/Images/joint4.png"),
+    },
+    {
+      id: 5,
+      name: "joint5",
+      tags: ["joint5"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint5.png"),
+      link: require("../assets/Images/joint5.png"),
+    },
+    {
+      id: 5,
+      name: "joint6",
+      tags: ["joint6"],
+      date: "13 OCT, 2024",
+      imgSrc: require("../assets/Images/joint6.png"),
+      link: require("../assets/Images/joint6.png"),
+    },
+  ];
   
-] 
