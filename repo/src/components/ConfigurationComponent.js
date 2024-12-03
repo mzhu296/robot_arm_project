@@ -80,7 +80,7 @@ const ConfigurationComponent = (props) => {
   return (
     <Container variants={Item}>
       <Box target="_blank" href={`${link}`}>
-        <Image img={imgSrc} />
+        <Image src={imgSrc} alt={name} />
         <Title>{name}</Title>
         <HashTags>
           {tags.map((t, id) => {

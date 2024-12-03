@@ -1,13 +1,14 @@
 
+import bottomImage from '../assets/Images/bottom.png';
 
 export const Configurations = [
     {
         id:1,
-        name:"",
-        tags:[""],
+        name:"xx",
+        tags:["xx"],
         date:"13 May, 2021",
-        imgSrc:"../assets/Images/bottom.png",
-        link:""
+        imgSrc: bottomImage,
+        link:"xx"
     },
   
 ] 
