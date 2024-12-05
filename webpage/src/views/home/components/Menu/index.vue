@@ -101,13 +101,34 @@ const max = ref(Number(Math.PI.toFixed(2)));
 
 const emit = defineEmits(["sliderInput", "switchChange"]);
 
-const sliderInput = (e, name, direction) => {
-  emit("sliderInput", e, name, direction);
-};
 
 const switchChange = (e) => {
   emit("switchChange", e);
 };
+
+const sliderInput = async (e, name, direction) => {
+  emit("sliderInput", e, name, direction);
+
+  // Prepare data to send
+  const data = { name, direction, value: e };
+
+  try {
+    // Send POST request to the backend
+    const response = await fetch("http://localhost:3000/api/joint-values", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    console.log("Backend response:", result);
+  } catch (error) {
+    console.error("Error sending data to the backend:", error);
+  }
+};
+
 </script>
 
 <style scope>
