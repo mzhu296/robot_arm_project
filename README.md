@@ -46,9 +46,9 @@ To set up and run the webpage part of the project:
 
 To set up the repository and run the project, follow these steps:
 
-1. Navigate to the repo directory:
+1. Navigate to the robotic-arm-backend directory:
 
-   cd repo
+   cd robotic-arm-backend
 
 2. Install Dependencies:
    Install the necessary Node.js packages by running:
