@@ -42,6 +42,27 @@ To set up and run the webpage part of the project:
    npm run dev
    ```
 
+## Server Setup
+
+To set up the repository and run the project, follow these steps:
+
+1. Navigate to the repo directory:
+
+   cd repo
+
+2. Install Dependencies:
+   Install the necessary Node.js packages by running:
+
+   npm install
+
+3. Start the Application:
+   To start the application, use the command:
+
+   node server.js
+
+   Run the Server:
+   To run the server directly, use the following command:
+
 ## Notes
 - Ensure that Node.js and npm are installed on your system before running these commands.
 - Make sure to run these commands from the correct directory to avoid errors.
