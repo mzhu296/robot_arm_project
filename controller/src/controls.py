@@ -28,7 +28,6 @@ STATES = {
     8: 'loop',
 }
 
-
 def controls(odrv) -> None:
     def reboot() -> None:
         try:
@@ -38,7 +37,7 @@ def controls(odrv) -> None:
                 pass
             else:
                 raise err
-
+    
     with ui.row().classes('w-full justify-between items-center'):
         with ui.row():
             ui.label(f'SN {hex(odrv.serial_number).removeprefix("0x").upper()}')
@@ -56,17 +55,17 @@ def controls(odrv) -> None:
                 .tooltip('Dump and clear errors')
             ui.button(on_click=reboot) \
                 .props('icon=restart_alt flat round') \
-                .tooltip('Reboot odrive')
+                .tooltip('Reboot rdrive')
 
     with ui.row():
         for a, axis in enumerate([odrv.axis0, odrv.axis1]):
             if not axis.motor.is_calibrated:
                 continue
             with ui.card(), ui.column():
-                _create_axis_column(a, axis)
+                _create_axis_column(a, axis, odrv)
 
 
-def _create_axis_column(index: int, axis: Any) -> None:
+def _create_axis_column(index: int, axis: Any, odrv: Any) -> None:
     ui.markdown(f'### Axis {index}')
 
     with ui.row().classes('w-full justify-between items-center'):
@@ -83,10 +82,17 @@ def _create_axis_column(index: int, axis: Any) -> None:
 
     ui.timer(0.1, update)
 
+# dev0.axis0.config.can_node_id = 0x02
+# dev0.can.set_baud_rate(1000000)
+
+
     ctr_cfg = axis.controller.config
     mtr_cfg = axis.motor.config
     enc_cfg = axis.encoder.config
     trp_cfg = axis.trap_traj.config
+    can_cfg = odrv.can.config
+    can_axis_cfg = axis.config.can
+    print(can_axis_cfg)
 
     with ui.row():
         mode = ui.toggle(MODES).bind_value(ctr_cfg, 'control_mode')
@@ -136,6 +142,17 @@ def _create_axis_column(index: int, axis: Any) -> None:
             ui.number('cur_bandwidth', format='%.3f').props('outlined').bind_value(mtr_cfg, 'current_control_bandwidth')
             ui.number('torque_lim', format='%.1f').props('outlined').bind_value(mtr_cfg, 'torque_lim')
             ui.number('requested_cur_range', format='%.1f').props('outlined').bind_value(mtr_cfg, 'requested_current_range')
+
+        with ui.card():
+            ui.markdown('**CAN BUS**')
+            ui.number('Baud rate', format='%d').props('outlined').bind_value(can_cfg, 'baud_rate')
+            ui.number('Bus id', format='%d').props('outlined').bind_value(can_axis_cfg, 'node_id')
+            ui.number('Heartbeat rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'heartbeat_rate_ms')
+            ui.number('Voltage/current rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'bus_vi_rate_ms')
+            ui.number('Encoder count rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'encoder_count_rate_ms')
+            ui.number('Encoder rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'encoder_rate_ms')
+            ui.number('Iq rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'iq_rate_ms')
+
 
     input_mode = ui.toggle(INPUT_MODES).bind_value(ctr_cfg, 'input_mode')
     with ui.row():
