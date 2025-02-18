@@ -5,28 +5,97 @@ from nicegui import ui
 from odrive.pyfibre import fibre
 from odrive.utils import dump_errors
 
+default = {'motor': 0}
+motors_cfg = {'M1': 
+                {'position': 0.0, 
+                'velocity': 0.0,
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 50,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                'M2':
+                {'position': 0.0,
+                'velocity': 0.0,                   
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 50,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                'M3':
+                {'position': 0.0,
+                'velocity': 0.0,
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 50,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                'M4':
+                {'position': 0.0,
+                'velocity': 0.0,
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 30,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                'M5':
+                {'position': 0.0,
+                'velocity': 0.0,
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 50,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                'M6':
+                {'position': 0.0,
+                'velocity': 0.0,
+                'status': 0,
+                'error': 0,
+                'iq': 0.0,
+                'voltage': 0.0,
+                'ibus': 0.0,
+                'reduction': 50,
+                'teaching': 0,
+                'ccw': 0,
+                },
+                }
+
 MODES = {
-    0: 'voltage',
-    1: 'torque',
-    2: 'velocity',
-    3: 'position',
+    0: 'Status',
+    1: 'Controls',
+    2: 'Teaching',
 }
 
-INPUT_MODES = {
-    0: 'inactive',
-    1: 'through',
-    2: 'v-ramp',
-    3: 'p-filter',
-    5: 'trap traj',
-    6: 't-ramp',
-    7: 'mirror',
-}
+joint_angle_tmp = {'J1': 0.0, 'J2': 0.0, 'J3': 0.0, 'J4': 0.0, 'J5': 0.0, 'J6': 0.0, 'Delay': 1.5, 'Gripper': 0, 'Torque': 0.0}
+joint_angle_lock = threading.Lock()
+joint_json = 'jason.json'
 
-STATES = {
-    0: 'undefined',
-    1: 'idle',
-    8: 'loop',
-}
+teaching = []    
+count = 0    
+
+buffer = []
+
+last_print_time = time.time()
 
 def controls(odrv) -> None:
     def reboot() -> None:
