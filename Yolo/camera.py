@@ -1,7 +1,7 @@
 from imageai.Detection import ObjectDetection
 obj_detect = ObjectDetection()
 obj_detect.setModelTypeAsYOLOv3()
-obj_detect.setModelPath(r"C:/Datasets/yolo.h5")
+obj_detect.setModelPath(r"C:/yoloFiles/yolo.h5")
 obj_detect.loadModel()
 import cv2
 
