@@ -37,3 +37,4 @@ app.on_startup(discovery_loop)
 
 if __name__ in {"__main__", "__mp_main__"}:
     ui.run(title="Rboot GUI")
+
