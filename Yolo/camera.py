@@ -1,13 +1,8 @@
-from imageai.Detection import ObjectDetection
+from ultralytics import YOLO
 import cv2
-print(cv2.__version__)
-import numpy as np
 
-# Initialize Object Detection
-obj_detect = ObjectDetection()
-obj_detect.setModelTypeAsYOLOv3()
-obj_detect.setModelPath(r"C:/yoloFiles/yolo.h5")
-obj_detect.loadModel()
+# Load YOLOv5 model
+model = YOLO("C:/yoloFiles/yolov5s.pt")  # Make sure the path to the model is correct
 
 # Start webcam feed
 cam_feed = cv2.VideoCapture(0)
@@ -20,16 +15,22 @@ while True:
         break  # Exit loop if there's an issue with the webcam feed
 
     # Perform object detection
-    annotated_image, preds = obj_detect.detectObjectsFromImage(
-        input_image=frame,
-        input_type="array",
-        output_type="array",
-        display_percentage_probability=False,
-        display_object_name=True
-    )
+    results = model(frame)  # Run YOLOv5 on the frame
 
-    # Display the annotated image
-    cv2.imshow("YOLO Object Detection", annotated_image)
+    # Draw bounding boxes
+    for r in results:
+        for box in r.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Get bounding box coordinates
+            confidence = box.conf[0].item() * 100  # Get confidence score
+            class_id = int(box.cls[0].item())  # Get class ID
+            label = f"{model.names[class_id]} {confidence:.2f}%"
+
+            # Draw rectangle and label
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+    # Display the image with detected objects
+    cv2.imshow("YOLOv5 Object Detection", frame)
 
     # Exit condition (Press 'q' or 'Esc')
     key = cv2.waitKey(1)
