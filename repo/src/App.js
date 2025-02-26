@@ -14,6 +14,8 @@ import WorkPage from './components/WorkPage';
 import RobotPageWrapper from './components/RobotPageWrapper';
 import SoundBar from './subComponents/SoundBar';
 import Login from './components/Login';
+import Signup from './components/Signup';
+
 
 
 function App() {
@@ -59,6 +61,7 @@ function App() {
             <Route path="/work" element={<WorkPage />} />
             <Route path="/robot" element={<RobotPageWrapper />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>
