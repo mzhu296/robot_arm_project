@@ -1,11 +1,10 @@
-# filepath: /Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/OpenCV.py
-# Testing OpenCV with laptop camera for object detection and distance estimation
+# Testing OpenCV with laptop camera for face detection and distance estimation
 
 import cv2
 import numpy as np
 
-# Load a pre-trained object detection model (e.g., MobileNet SSD)
-net = cv2.dnn.readNetFromCaffe('/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/deploy.prototxt', '/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/mobilenet_iter_73000.caffemodel')
+# Load the Haar cascade for face detection
+face_cascade = cv2.CascadeClassifier('/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/haarcascade_frontalface_default.xml')
 
 # Initialize the camera
 cap = cv2.VideoCapture(0)
@@ -14,8 +13,8 @@ if not cap.isOpened():
     print("Error: Could not open video device")
     exit()
 
-# Known width of the object in real life (e.g., 20 cm)
-KNOWN_WIDTH = 20.0
+# Known width of the face in real life (e.g., 16 cm)
+KNOWN_WIDTH = 16.0
 
 # Focal length of the camera (this needs to be calibrated for your specific camera)
 FOCAL_LENGTH = 700.0
@@ -32,32 +31,21 @@ while True:
         print("Error: Could not read frame")
         break
     
-    # Prepare the frame for object detection
-    blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 0.007843, (300, 300), 127.5)
-    net.setInput(blob)
-    detections = net.forward()
-
-    # Loop over the detections
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Detect faces in the frame
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    # Loop over the detected faces
+    for (x, y, w, h) in faces:
+        # Calculate the distance to the face
+        distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w)
         
-        # Filter out weak detections
-        if confidence > 0.2:
-            idx = int(detections[0, 0, i, 1])
-            box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-            (startX, startY, endX, endY) = box.astype("int")
-            
-            # Calculate the width of the detected object
-            object_width = endX - startX
-            
-            # Estimate the distance to the object
-            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, object_width)
-            
-            # Draw the bounding box and label on the frame
-            label = f"Object: {confidence * 100:.2f}% Distance: {distance:.2f} cm"
-            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-            y = startY - 15 if startY - 15 > 15 else startY + 15
-            cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        # Draw the bounding box and label on the frame
+        label = f"Face: Distance: {distance:.2f} cm"
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
     # Display the resulting frame
     cv2.imshow('Frame', frame)
