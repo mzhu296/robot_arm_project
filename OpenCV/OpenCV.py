@@ -1,4 +1,8 @@
 # Testing OpenCV with laptop camera for face detection and distance estimation
+#TODO Improve the accuracy of the distance estimation by calibrating the focal length of the camera
+#TODO Implement a more accurate method for detecting the objects width in the frame
+#TODO Calibrate percent error for the recognition estimation
+#TODO Add percent confidence to the label
 
 import cv2
 import numpy as np
