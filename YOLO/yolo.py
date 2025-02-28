@@ -1,39 +1,94 @@
-# Testing OpenCV with laptop camera for object detection and distance estimation
-
+# Testing YOLO with laptop camera for object detection and distance estimation
+# Download YOLO Model Files: You need the YOLO configuration file (yolov3.cfg), the pre-trained weights file (yolov3.weights), and the COCO names file (coco.names). You can download them from the following links:
+# yolov3.cfg
+# yolov3.weights
+# coco.names
+# Save the Files: Save these files in a directory on your computer. For example, you can create a directory named models inside your project directory and save the files there.
 import cv2
 import numpy as np
 
-# Load a pre-trained object detection model (e.g., MobileNet SSD)
-net = cv2.dnn.readNetFromCaffe('deploy.prototxt', 'mobilenet_iter_73000.caffemodel')
+# Load YOLO
+net = cv2.dnn.readNet("models/yolov3.weights", "models/yolov3.cfg")
+layer_names = net.getLayerNames()
+output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
+# Load COCO labels
+with open("models/coco.names", "r") as f:
+    classes = [line.strip() for line in f.readlines()]
 
 # Initialize the camera
 cap = cv2.VideoCapture(0)
+
+if not cap.isOpened():
+    print("Error: Could not open video device")
+    exit()
+
+# Known width of the object in real life (e.g., 20 cm)
+KNOWN_WIDTH = 20.0
+
+# Focal length of the camera (this needs to be calibrated for your specific camera)
+FOCAL_LENGTH = 700.0
+
+def calculate_distance(knownWidth, focalLength, perWidth):
+    # Compute and return the distance from the object to the camera
+    return (knownWidth * focalLength) / perWidth
 
 while True:
     # Capture frame-by-frame
     ret, frame = cap.read()
     
-    # Prepare the frame for object detection
-    blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 0.007843, (300, 300), 127.5)
-    net.setInput(blob)
-    detections = net.forward()
-
-    # Loop over the detections
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
-        
-        # Filter out weak detections
-        if confidence > 0.2:
-            idx = int(detections[0, 0, i, 1])
-            box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-            (startX, startY, endX, endY) = box.astype("int")
-            
-            # Draw the bounding box and label on the frame
-            label = f"Object: {confidence * 100:.2f}%"
-            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-            y = startY - 15 if startY - 15 > 15 else startY + 15
-            cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    if not ret:
+        print("Error: Could not read frame")
+        break
     
+    height, width, channels = frame.shape
+
+    # Prepare the frame for object detection
+    blob = cv2.dnn.blobFromImage(frame, 0.00392, (416, 416), (0, 0, 0), True, crop=False)
+    net.setInput(blob)
+    outs = net.forward(output_layers)
+
+    # Initialize lists for detected bounding boxes, confidences, and class IDs
+    boxes = []
+    confidences = []
+    class_ids = []
+
+    # Loop over each detection
+    for out in outs:
+        for detection in out:
+            scores = detection[5:]
+            class_id = np.argmax(scores)
+            confidence = scores[class_id]
+            
+            # Filter out weak detections
+            if confidence > 0.5:
+                center_x = int(detection[0] * width)
+                center_y = int(detection[1] * height)
+                w = int(detection[2] * width)
+                h = int(detection[3] * height)
+                
+                # Calculate the coordinates of the bounding box
+                x = int(center_x - w / 2)
+                y = int(center_y - h / 2)
+                
+                boxes.append([x, y, w, h])
+                confidences.append(float(confidence))
+                class_ids.append(class_id)
+
+    # Apply non-maxima suppression to remove overlapping bounding boxes
+    indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+
+    # Draw bounding boxes and labels on the frame
+    for i in range(len(boxes)):
+        if i in indexes:
+            x, y, w, h = boxes[i]
+            label = str(classes[class_ids[i]])
+            confidence = confidences[i]
+            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w)
+            color = (0, 255, 0)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(frame, f"{label} {confidence:.2f} Distance: {distance:.2f} cm", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
     # Display the resulting frame
     cv2.imshow('Frame', frame)
     
