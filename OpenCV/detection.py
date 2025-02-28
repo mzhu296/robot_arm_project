@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 
 # Load pre-trained model and configuration files
-prototxt_path = "MobileNetSSD_deploy.prototxt"
-caffemodel_path = "MobileNetSSD_deploy.caffemodel"
+prototxt_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\deploy.prototxt"
+caffemodel_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\MobileNetSSD_deploy.caffemodel"
 net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
 # Define the list of class labels MobileNet SSD was trained to detect
