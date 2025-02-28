@@ -10,6 +10,9 @@ import numpy as np
 # Load the Haar cascade for face detection
 face_cascade = cv2.CascadeClassifier('/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/haarcascade_frontalface_default.xml')
 
+# Load the pre-trained deep learning face detector model
+net = cv2.dnn.readNetFromCaffe('/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/deploy.prototxt', '/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/OpenCV/mobilenet_iter_73000.caffemodel')
+
 # Initialize the camera
 cap = cv2.VideoCapture(0)
 
@@ -23,6 +26,9 @@ KNOWN_WIDTH = 16.0
 # Focal length of the camera (this needs to be calibrated for your specific camera)
 FOCAL_LENGTH = 700.0
 
+# Confidence threshold for filtering detections
+CONFIDENCE_THRESHOLD = 0.0
+
 def calculate_distance(knownWidth, focalLength, perWidth):
     # Compute and return the distance from the object to the camera
     return (knownWidth * focalLength) / perWidth
@@ -35,6 +41,12 @@ while True:
         print("Error: Could not read frame")
         break
     
+    # # Prepare the frame for face detection
+    # (h, w) = frame.shape[:2]
+    # blob = cv2.dnn.blobFromImage(cv2.resize(frame, (300, 300)), 1.0, (300, 300), (104.0, 177.0, 123.0))
+    # net.setInput(blob)
+    # detections = net.forward()
+    
     # Convert the frame to grayscale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
@@ -46,8 +58,11 @@ while True:
         # Calculate the distance to the face
         distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w)
         
+        # Assume a default confidence for Haar cascade detections
+        confidence = 1.0
+        
         # Draw the bounding box and label on the frame
-        label = f"Face: Distance: {distance:.2f} cm"
+        label = f"Face: {confidence * 100:.2f}% Distance: {distance:.2f} cm"
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
