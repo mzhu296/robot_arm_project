@@ -4,16 +4,21 @@
 # yolov3.weights
 # coco.names
 # Save the Files: Save these files in a directory on your computer. For example, you can create a directory named models inside your project directory and save the files there.
+
 import cv2
 import numpy as np
+import os
+
+# Define the absolute path to the models directory
+models_dir = "/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/YOLO/models"
 
 # Load YOLO
-net = cv2.dnn.readNet("models/yolov3.weights", "models/yolov3.cfg")
+net = cv2.dnn.readNet(os.path.join(models_dir, "yolov3.weights"), os.path.join(models_dir, "yolov3.cfg"))
 layer_names = net.getLayerNames()
-output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
 # Load COCO labels
-with open("models/coco.names", "r") as f:
+with open(os.path.join(models_dir, "coco.names"), "r") as f:
     classes = [line.strip() for line in f.readlines()]
 
 # Initialize the camera
