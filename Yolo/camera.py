@@ -1,10 +1,12 @@
+# Import ultraalytics (YOLO) and cv2 for image recognition
 from ultralytics import YOLO
 import cv2
 
-# Load YOLOv5 model
-model = YOLO("C:/yoloFiles/yolov5s.pt")  # Make sure the path to the model is correct
+# Load the YOLOv5 model
+# Use path from C: folder
+model = YOLO("C:/yoloFiles/yolov5s.pt")  
 
-# Start webcam feed
+# Start the webcam feed
 cam_feed = cv2.VideoCapture(0)
 cam_feed.set(cv2.CAP_PROP_FRAME_WIDTH, 650)
 cam_feed.set(cv2.CAP_PROP_FRAME_HEIGHT, 750)
@@ -12,12 +14,11 @@ cam_feed.set(cv2.CAP_PROP_FRAME_HEIGHT, 750)
 while True:
     ret, frame = cam_feed.read()
     if not ret:
-        break  # Exit loop if there's an issue with the webcam feed
+        break  # Exit loop in case of issue with the webcam feed
 
-    # Perform object detection
-    results = model(frame)  # Run YOLOv5 on the frame
-
-    # Draw bounding boxes
+    # Begin object detection, use YOLOv5 on the frame
+    results = model(frame)  
+    # Draw the bounding boxes around the recognized objects
     for r in results:
         for box in r.boxes:
             x1, y1, x2, y2 = map(int, box.xyxy[0])  # Get bounding box coordinates
@@ -32,7 +33,7 @@ while True:
     # Display the image with detected objects
     cv2.imshow("YOLOv5 Object Detection", frame)
 
-    # Exit condition (Press 'q' or 'Esc')
+    # Use 'q' or 'esc' to shut down the window
     key = cv2.waitKey(1)
     if key == ord("q") or key == 27:
         break
