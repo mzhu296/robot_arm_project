@@ -14,9 +14,7 @@ import WorkPage from './components/WorkPage';
 import RobotPageWrapper from './components/RobotPageWrapper';
 import SoundBar from './subComponents/SoundBar';
 import Login from './components/Login';
-import Signup from './components/Signup';
-
-
+import Signup from './'
 
 function App() {
   const location = useLocation();
