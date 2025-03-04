@@ -1,79 +1,139 @@
 import socket
+from collections import deque
 import threading
 import time
-from nicegui import ui, app
-from typing import Callable, Optional
+import can_data
+import zlib
 
 class UDPClient:
-    def __init__(self, host='127.0.0.1', port=20001):
-        self.host = host
-        self.port = port
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    def __init__(self, server_address, server_port, buffer_size=512):
+        self.server_address = server_address
+        self.server_port = server_port
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.connected = False
+        self.buffer = deque(maxlen=buffer_size)
+        self.receive_thread = None
         self.callback = None
-        self.running = False
-        self.thread = None
 
-    def start(self):
-        try:
-            self.socket.bind(('', self.port))
-            self.running = True
-            self.thread = threading.Thread(target=self._receive_loop)
-            self.thread.daemon = True
-            self.thread.start()
-            return True
-        except Exception as e:
-            print(f"Failed to start UDP client: {e}")
-            return False
-
-    def stop(self):
-        self.running = False
-        if self.thread:
-            self.thread.join()
-        self.socket.close()
-
-    def _receive_loop(self):
-        while self.running:
-            try:
-                data, addr = self.socket.recvfrom(1024)
-                if self.callback:
-                    hex_str = ' '.join([f'{b:02x}' for b in data])
-                    self.callback(hex_str)
-            except:
-                continue
-
-    def send_message(self, id: int, type: int, cmd1: bytes, cmd2: bytes, msg_type: int):
-        try:
-            message = bytearray([id, type, msg_type])
-            message.extend(cmd1)
-            message.extend(cmd2)
-            self.socket.sendto(message, (self.host, self.port))
-        except Exception as e:
-            print(f"Failed to send message: {e}")
-
-    def register_callback(self, callback: Callable):
+    def register_callback(self, callback):
         self.callback = callback
 
     def unregister_callback(self):
-        self.callback = None
+        self.callback = None     
 
-def main():
-    client = UDPClient()
-    client.start()
+    def connect(self):
+        try:
+            self.server_address_port = (self.server_address, self.server_port)
+            self.connected = True
+            return True
+        except Exception as e:
+            print(f'Error: {e}')
+            self.connected = False
+            return False
 
-    app.on_shutdown(client.stop)
-    ui.colors(primary='#6200ee')
+    def is_server_up(self):
+        try:
+            # Create a UDP socket
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                # Set a timeout for the connection attempt
+                s.settimeout(2)  # Adjust the timeout as needed
 
-    with ui.tabs().classes('w-full') as tabs:
-        controls = ui.tab('Controls')
-        teaching = ui.tab('Teaching')
+                # Send a dummy message to the server
+                s.sendto(b'', (self.server_address, self.server_port))
+                print(f"Server {self.server_address}:{self.server_port} is up and active.")
+                self.connected = True
+                return True
+        except Exception as e:
+            print(f"Server {self.server_address}:{self.server_port} is not reachable: {e}")
+            self.connected = False
+            return False
 
-    with ui.tab_panels(tabs, value=controls).classes('w-full'):
-        with ui.tab_panel(controls):
-            controls(client)
-        with ui.tab_panel(teaching):
-            ui.label('Teaching mode')
+    def calculate_checksum(self, data):
+        checksum = 0
+        for byte in data:
+            checksum ^= byte
+        return checksum
+                
+    def send_message(self, id, cmd, body1, body2, type):
+        if type == can_data.Message_type['short']:
+            message = bytearray(12)  # Total size of the message
+            message[0] = 0xbb  # message.Head
+            message[1] = id#.to_bytes(1, byteorder='little')
+            # if can_data.command_id['Set_Axis_State'] == type:
+            message[2] = cmd#.to_bytes(1, byteorder='little')#command id
+            #3 4 5 6 7 8 9 10 message
+            #0 1 2 3 4 5 6 7  rdive data
+            # body1 = cmd1#.to_bytes(4, byteorder='little')
+            # body2 = cmd2#.to_bytes(4, byteorder='little')
+            message[3] = body1[0]#byte 0 3 is 0
+            message[4] = body1[1]
+            message[5] = body1[2]
+            message[6] = body1[3]
 
-    ui.run(port=8080, reload=False)
+            message[7] = body2[0]#byte 0 3 is 0
+            message[8] = body2[1]
+            message[9] = body2[2]
+            message[10] = body2[3]
+            
+            # Fill in the rest of the message bytes as needed
+            message[11] = self.calculate_checksum(body1)  # message.Tail  
 
-if __name__ == '__main__':
-    main()
+        if type == can_data.Message_type['full']:
+            message = bytearray(52)  # Total size of the message
+            message[0] = 0xb8  # message.Head
+            message[1] = id#.to_bytes(1, byteorder='little')
+            # if can_data.command_id['Set_Axis_State'] == type:
+            message[2] = cmd#.to_bytes(1, byteorder='little')#command id
+            #3 4 5 6 7 8 9 10 message
+            #0 1 2 3 4 5 6 7  rdive data
+            # body1 = cmd1#.to_bytes(4, byteorder='little')
+            # body2 = cmd2#.to_bytes(4, byteorder='little')
+            for i in range(len(body1)):
+                message[i+3] = body1[i]
+            message[51] = 0xcc  # message.Tail  
+            # hex_data = ' '.join(hex(byte) for byte in message)
+            # print(hex_data)
+
+        # print(message)      
+        if self.connected:            
+            try:
+                self.client_socket.sendto(message, self.server_address_port)
+                print('Message sent successfully.')
+            except Exception as e:
+                print(f'Error: {e}')
+        else:
+            print('Not connected to the server.')
+
+    def receive_messages(self):
+        if self.connected:
+            while True:
+                try:
+                    data, address = self.client_socket.recvfrom(1024)
+                    if data:
+                        hex_data = ' '.join(f'{b:02X}' for b in data)
+                        # self.buffer.append(hex_data)
+                        if self.callback:
+                            self.callback(hex_data)
+                        # print(f'Received message from {address}: {hex_data}')
+                except (KeyboardInterrupt, SystemExit):
+                    # Handle keyboard interrupt (Ctrl+C) and system exit
+                    break
+                except Exception as e:
+                    print(f'Error: {e}')
+        else:
+            print('Not connected to the server.')
+
+    def start_receive_thread(self):
+        self.receive_thread = threading.Thread(target=self.receive_messages)
+        self.receive_thread.start()
+
+    def get_buffer_data(self):
+        if self.buffer:
+            return self.buffer.popleft()
+        else:
+            return None
+
+    def close(self):
+        if self.receive_thread:
+            self.receive_thread.join()
+        self.client_socket.close()
