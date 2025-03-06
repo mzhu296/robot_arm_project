@@ -24,3 +24,4 @@ chrome-user-data
 .vscode
 *.swp
 *.swo
+yolov3.weightsYOLO/models/yolov3.weights
