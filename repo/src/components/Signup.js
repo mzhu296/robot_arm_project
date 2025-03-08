@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
+import { NavLink, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { NavLink } from 'react-router-dom';
-import BackgroundImage from '../assets/Images/ArmImage3.jpeg'; // Reuse your background image
 
-// Container for the signup page with background image
 const SignupContainer = styled.div`
-  background: ${props => props.theme.body} url(${BackgroundImage}) no-repeat center center fixed;
+  background: ${props => props.theme.body} url('/path/to/your/ArmImage3.jpeg') no-repeat center center fixed;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -14,7 +12,6 @@ const SignupContainer = styled.div`
   overflow: hidden;
 `;
 
-// Styled form wrapper
 const SignupForm = styled.form`
   background: ${props => props.theme.text};
   padding: 2rem;
@@ -25,14 +22,12 @@ const SignupForm = styled.form`
   flex-direction: column;
 `;
 
-// Title of the form
 const Title = styled.h1`
   text-align: center;
   margin-bottom: 1rem;
   color: ${props => props.theme.body};
 `;
 
-// Styled input fields
 const Input = styled.input`
   padding: 0.75rem;
   margin-bottom: 1rem;
@@ -42,7 +37,6 @@ const Input = styled.input`
   outline: none;
 `;
 
-// Styled motion button for signup
 const Button = styled(motion.button)`
   padding: 0.75rem;
   background: ${props => props.theme.body};
@@ -55,7 +49,6 @@ const Button = styled(motion.button)`
   transition: background 0.3s ease;
 `;
 
-// Container for the login link
 const LinkContainer = styled.div`
   text-align: center;
   margin-top: 1rem;
@@ -63,24 +56,72 @@ const LinkContainer = styled.div`
   font-size: 0.9rem;
 `;
 
-const Signup = () => {
-  // Local state to store form values
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const ErrorMessage = styled.p`
+  color: red;
+  text-align: center;
+`;
 
-  // Handle form submission (replace with your signup logic)
-  const handleSubmit = (e) => {
+const SuccessMessage = styled.p`
+  color: green;
+  text-align: center;
+`;
+
+const Signup = () => {
+  const [username, setUsername]         = useState('');
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError]               = useState('');
+  const [success, setSuccess]           = useState('');
+  const history = useHistory();
+
+  // Complete signup handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Signing up with:', { username, email, password, confirmPassword });
-    // Add your signup logic here (e.g., API call)
+    
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setError('');
+
+    // Prepare the data payload (do not send confirmPassword to the server)
+    const payload = { username, email, password };
+
+    try {
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess("Signup successful! Redirecting to login...");
+        // Optionally, clear the form or store user data
+        setTimeout(() => {
+          history.push('/login');
+        }, 2000);
+      } else {
+        // If response not ok, display the error message returned by the API
+        setError(data.message || "Signup failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error during signup:", err);
+      setError("Server error. Please try again later.");
+    }
   };
 
   return (
     <SignupContainer>
       <SignupForm onSubmit={handleSubmit}>
         <Title>Sign Up</Title>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {success && <SuccessMessage>{success}</SuccessMessage>}
         <Input
           type="text"
           placeholder="Username"
