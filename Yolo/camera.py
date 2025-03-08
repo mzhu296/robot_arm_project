@@ -1,39 +1,49 @@
-from ultralytics import YOLO # Import ultraalytics (YOLO)
-import cv2 # import cv2 for image recognition
+from ultralytics import YOLO  # Import YOLO
+import cv2  # Import OpenCV for image processing
 
-# Load the YOLOv5 model
-# Use path from C: folder
+# Load the YOLO model
 model = YOLO("C:/yoloFiles/yolov5s.pt")  
 
-# Start the webcam feed
+# Set up the camera
 cam_feed = cv2.VideoCapture(0)
-cam_feed.set(cv2.CAP_PROP_FRAME_WIDTH, 650) #Camera Width
-cam_feed.set(cv2.CAP_PROP_FRAME_HEIGHT, 750) # Camera Height
+cam_feed.set(cv2.CAP_PROP_FRAME_WIDTH, 650)
+cam_feed.set(cv2.CAP_PROP_FRAME_HEIGHT, 750)
+
+# Constants for distance estimation
+KNOWN_HEIGHT = 170  # Example: average human height in cm
+FOCAL_LENGTH = 500  # Adjust based on calibration
 
 # Read camera feed loop
 while True:
     ret, frame = cam_feed.read()
     if not ret:
-        break  # Exit loop in case of issue with the webcam feed
+        break  # Exit loop if there's an issue
 
-    # Begin object detection, use YOLOv5 on the frame
+    # Object detection
     results = model(frame)  
-    # Draw the bounding boxes around the recognized objects
+
+    # Draw bounding boxes and compute distance
     for r in results:
         for box in r.boxes:
-            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Get bounding box coordinates
-            confidence = box.conf[0].item() * 100  # Get confidence score
-            class_id = int(box.cls[0].item())  # Get class ID
-            label = f"{model.names[class_id]} {confidence:.2f}%" #Generate object label
+            x1, y1, x2, y2 = map(int, box.xyxy[0])  # Bounding box coordinates
+            height_pixels = y2 - y1  # Object height in pixels
+            confidence = box.conf[0].item() * 100  # Confidence score
+            class_id = int(box.cls[0].item())  # Class ID
+            label = f"{model.names[class_id]} {confidence:.2f}%"
+
+            # Estimate distance (avoid division by zero)
+            if height_pixels > 0:
+                distance = (KNOWN_HEIGHT * FOCAL_LENGTH) / height_pixels
+                label += f" {distance:.2f} cm"
 
             # Draw rectangle and label
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2) #rectangle Shape
-            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2) #Frame header
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-    # Display the image with detected objects
-    cv2.imshow("YOLOv5 Object Detection", frame)
+    # Show the result
+    cv2.imshow("YOLOv5 Object Detection with Distance Estimation", frame)
 
-    # Use 'q' or 'esc' to shut down the window
+    # Exit on 'q' or 'esc'
     key = cv2.waitKey(1)
     if key == ord("q") or key == 27:
         break
