@@ -1,3 +1,4 @@
+#Look to the README.md file in the same folder for thoughts on this model
 from ultralytics import YOLO  # Import YOLO
 import cv2  # Import OpenCV for image processing
 
