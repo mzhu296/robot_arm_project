@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useHistory } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 
@@ -73,7 +73,7 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError]               = useState('');
   const [success, setSuccess]           = useState('');
-  const history = useHistory();
+  const history = useNavigate();
 
   // Complete signup handler
   const handleSubmit = async (e) => {

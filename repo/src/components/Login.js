@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { NavLink, useHistory } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import BackgroundImage from '../assets/Images/ArmImage3.jpeg'; // Reuse your background image
 
 // Container for the login page with background image
@@ -79,9 +79,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const history = useHistory();
+  const navigate = useNavigate();
 
-  // Complete login handler
+  // Complete login handler using useNavigate
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -101,7 +101,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         setSuccess("Login successful! Redirecting...");
         setTimeout(() => {
-          history.push('/dashboard'); // Redirect to a protected/dashboard page
+          navigate('/dashboard'); // Redirect to a protected/dashboard page
         }, 2000);
       } else {
         // If not OK, show the error message from backend
