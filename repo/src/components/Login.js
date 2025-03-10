@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useHistory } from 'react-router-dom';
 import BackgroundImage from '../assets/Images/ArmImage3.jpeg'; // Reuse your background image
 
 // Container for the login page with background image
@@ -63,22 +63,62 @@ const LinkContainer = styled.div`
   font-size: 0.9rem;
 `;
 
+const ErrorMessage = styled.p`
+  color: red;
+  text-align: center;
+`;
+
+const SuccessMessage = styled.p`
+  color: green;
+  text-align: center;
+`;
+
 const Login = () => {
   // Local state to store email and password values
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const history = useHistory();
 
-  // Handle form submission (replace with your auth logic)
-  const handleSubmit = (e) => {
+  // Complete login handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Logging in with:', { email, password });
-    // Add your login logic here
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Save the token and redirect after a short delay
+        localStorage.setItem('token', data.token);
+        setSuccess("Login successful! Redirecting...");
+        setTimeout(() => {
+          history.push('/dashboard'); // Redirect to a protected/dashboard page
+        }, 2000);
+      } else {
+        // If not OK, show the error message from backend
+        setError(data.message || "Login failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error during login:", err);
+      setError("Server error. Please try again later.");
+    }
   };
 
   return (
     <LoginContainer>
       <LoginForm onSubmit={handleSubmit}>
         <Title>Login</Title>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {success && <SuccessMessage>{success}</SuccessMessage>}
         <Input
           type="email"
           placeholder="Email"
