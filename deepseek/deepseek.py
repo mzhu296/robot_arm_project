@@ -85,14 +85,7 @@ def send_joint_positions(udp_client, joint_angles):
         motor_cnt = angle / 360.0 * reduction_value
         pos = struct.pack('<f', float(motor_cnt))
         cmd2 = struct.pack('<HH', 60, 10)
-
-        udp_client.send_message(
-            cid,
-            can_data.command_id['Set_Input_Pos'],
-            pos,
-            cmd2,
-            can_data.Message_type['short']
-        )
+        # ...send to UDP client
 
 # Function to set all motors to IDLE mode (stop movement)
 def send_idle_mode(udp_client):
