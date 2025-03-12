@@ -1,11 +1,11 @@
 #Look to the README.md file in the same folder for thoughts on this model
-# Import OpenCV and NumPy
-import cv2
-import numpy as np
+# Imports 
+import cv2 # Import OpenCV
+import numpy as np # Import numpy
 
 # Load model files (deploy.prototxt and mobilenet.caffemodel)
-prototxt_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\deploy.prototxt"
-caffemodel_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\mobilenet_iter_73000.caffemodel"
+prototxt_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\deploy.prototxt" # prototxt model
+caffemodel_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\mobilenet_iter_73000.caffemodel" # caffe model
 net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
 # List of detectable objects
@@ -17,12 +17,12 @@ KNOWN_HEIGHTS = {
     "person": 170,  # cm
     "bottle": 25,   # cm
     "tvmonitor": 50, # cm
-}  # Add more if needed
-FOCAL_LENGTH = 500  # Adjust after calibration
+}  
+FOCAL_LENGTH = 500  # Adjustable if needed
 
 # Start webcam
 cap = cv2.VideoCapture(0)
-
+#Begin reading frame
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -39,7 +39,7 @@ while True:
         if confidence > 0.2:  # Confidence threshold
             idx = int(detections[0, 0, i, 1])
             class_name = CLASSES[idx]
-            
+            # dectection box build
             box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
             (startX, startY, endX, endY) = box.astype("int")
             
