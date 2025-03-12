@@ -90,7 +90,7 @@ const Signup = () => {
     const payload = { username, email, password };
 
     try {
-      const response = await fetch('/api/signup', {
+      const response = await fetch('http://localhost:3000/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
