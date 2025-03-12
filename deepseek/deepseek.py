@@ -117,3 +117,12 @@ def voice_command(udp_client):
             return "Could not understand the voice command."
         except sr.RequestError:
             return "Speech Recognition service unavailable."
+        
+def smooth_movement(udp_client, start_position, end_position, steps=10):
+    """Move smoothly from start to end position in multiple steps"""
+    for i in range(steps + 1):
+        t = i / steps  # Interpolation parameter (0 to 1)
+        # Linear interpolation between positions
+        current_position = [start + (end - start) * t for start, end in zip(start_position, end_position)]
+        send_joint_positions(udp_client, current_position)
+        time.sleep(0.05)  # Small delay between steps
