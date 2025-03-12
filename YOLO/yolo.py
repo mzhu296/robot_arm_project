@@ -34,9 +34,12 @@ KNOWN_WIDTH = 20.0
 # Focal length of the camera (this needs to be calibrated for your specific camera)
 FOCAL_LENGTH = 700.0
 
-def calculate_distance(knownWidth, focalLength, perWidth):
+# Calibration factor for fine-tuning the distance estimation
+CALIBRATION_FACTOR = 1.0
+
+def calculate_distance(knownWidth, focalLength, perWidth, calibrationFactor):
     # Compute and return the distance from the object to the camera
-    return (knownWidth * focalLength) / perWidth
+    return (knownWidth * focalLength * calibrationFactor) / perWidth
 
 while True:
     # Capture frame-by-frame
@@ -89,7 +92,7 @@ while True:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             confidence = confidences[i]
-            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w)
+            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w, CALIBRATION_FACTOR)
             color = (0, 255, 0)
             cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
             cv2.putText(frame, f"{label} {confidence:.2f} Distance: {distance:.2f} cm", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
