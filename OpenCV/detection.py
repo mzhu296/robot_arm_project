@@ -1,4 +1,3 @@
-#Look to the README.md file in the same folder for thoughts on this model
 # Imports 
 import cv2 # Import OpenCV
 import numpy as np # Import numpy
