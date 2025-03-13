@@ -1,4 +1,4 @@
-#Look to the README.md file in the same folder for thoughts on this model
+#Imports
 from ultralytics import YOLO  # Import YOLO
 import cv2  # Import OpenCV for image processing
 
@@ -11,8 +11,8 @@ cam_feed.set(cv2.CAP_PROP_FRAME_WIDTH, 650)
 cam_feed.set(cv2.CAP_PROP_FRAME_HEIGHT, 750)
 
 # Constants for distance estimation
-KNOWN_HEIGHT = 170  # 170cm, the avergae human height
-FOCAL_LENGTH = 500  # This length currently is a placeholder and will be adjusted accordingly
+KNOWN_HEIGHT = 170  # the avergae human height
+FOCAL_LENGTH = 500  # This current placeholder for focal length
 
 # Read camera feed loop
 while True:
