@@ -85,7 +85,14 @@ def send_joint_positions(udp_client, joint_angles):
         motor_cnt = angle / 360.0 * reduction_value
         pos = struct.pack('<f', float(motor_cnt))
         cmd2 = struct.pack('<HH', 60, 10)
-        # ...send to UDP client
+
+        udp_client.send_message(
+            cid,
+            can_data.command_id['Set_Input_Pos'],
+            pos,
+            cmd2,
+            can_data.Message_type['short']
+        )
 
 # Function to set all motors to IDLE mode (stop movement)
 def send_idle_mode(udp_client):
@@ -117,12 +124,3 @@ def voice_command(udp_client):
             return "Could not understand the voice command."
         except sr.RequestError:
             return "Speech Recognition service unavailable."
-        
-def smooth_movement(udp_client, start_position, end_position, steps=10):
-    """Move smoothly from start to end position in multiple steps"""
-    for i in range(steps + 1):
-        t = i / steps  # Interpolation parameter (0 to 1)
-        # Linear interpolation between positions
-        current_position = [start + (end - start) * t for start, end in zip(start_position, end_position)]
-        send_joint_positions(udp_client, current_position)
-        time.sleep(0.05)  # Small delay between steps
