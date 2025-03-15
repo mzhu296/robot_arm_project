@@ -43,8 +43,12 @@ def calculate_distance(knownWidth, focalLength, perWidth, calibrationFactor):
     return (knownWidth * focalLength * calibrationFactor) / perWidth
 
 # Define the ArUco dictionary and parameters
-aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250)
-parameters = aruco.DetectorParameters_create()
+aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
+parameters = aruco.DetectorParameters()
+
+# Frame skipping parameter
+FRAME_SKIP = 2
+frame_count = 0
 
 while True:
     # Capture frame-by-frame
@@ -53,6 +57,13 @@ while True:
     if not ret:
         print("Error: Could not read frame")
         break
+    
+    frame_count += 1
+    if frame_count % FRAME_SKIP != 0:
+        continue
+    
+    # Resize the frame to reduce processing time
+    frame = cv2.resize(frame, (1920, 1080))
     
     height, width, channels = frame.shape
 
