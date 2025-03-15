@@ -3,13 +3,29 @@ import can_data
 import struct
 import re
 import time
-import speech_recognition as sr 
+import pyaudio
+import json
+import pyttsx3  # Import the text-to-speech library
+from vosk import Model, KaldiRecognizer
+
+# Initialize text-to-speech engine
+tts_engine = pyttsx3.init()
+tts_engine.setProperty('rate', 150)  # Adjust speaking speed
+
+# Function to make the robot speak
+def speak(text):
+    print(f"🗣️ Robot Says: {text}")
+    tts_engine.say(text)
+    tts_engine.runAndWait()
 
 # Set up DeepSeek AI client
 client = openai.OpenAI(
     api_key="EMPTY",
     base_url="http://localhost:1234/v1"
 )
+
+# Load Vosk model (Ensure the "model" directory exists)
+vosk_model = Model("model")
 
 # Predefined positions for special commands
 PRESET_MOVEMENTS = {
@@ -23,7 +39,6 @@ PRESET_MOVEMENTS = {
     ]
 }
 
-# Function to generate AI response
 def generate_response(prompt):
     response = client.chat.completions.create(
         model="deepseek-r1",
@@ -46,19 +61,25 @@ def process_ai_command(udp_client, command_text):
 
     # Handle special commands
     if "home" in command_text or "reset" in command_text:
-        print("Moving to Home Position...")
+        response = "Moving to Home Position..."
+        print(response)
+        speak(response)
         send_joint_positions(udp_client, PRESET_MOVEMENTS["home"])
         return "Robot moved to home position."
 
     elif "wave" in command_text:
-        print("Performing Wave Hello...")
+        response = "Performing Wave Hello..."
+        print(response)
+        speak(response)
         for pose in PRESET_MOVEMENTS["wave_hello"]:
             send_joint_positions(udp_client, pose)
             time.sleep(1)  # Delay between movements
         return "Robot completed waving motion."
 
     elif "stop" in command_text or "halt" in command_text:
-        print("Stopping all movement...")
+        response = "Stopping all movement..."
+        print(response)
+        speak(response)
         send_idle_mode(udp_client)  # Send IDLE mode command
         return "Robot stopped."
 
@@ -72,10 +93,16 @@ def process_ai_command(udp_client, command_text):
     print(f"🔹 Extracted joint values: {joint_values}")
 
     if len(joint_values) == 6:
+        response = f"Moving joints to positions: {joint_values}"
+        print(response)
+        speak(response)
         send_joint_positions(udp_client, joint_values)
-        return f"Sent command to move joints: {joint_values}"
+        return response
     else:
-        return f"Error: AI response did not contain 6 valid joint positions. Extracted: {joint_values}"
+        response = f"Error: AI response did not contain 6 valid joint positions. Extracted: {joint_values}"
+        print(response)
+        speak(response)
+        return response
 
 # Function to send joint positions via UDP
 def send_joint_positions(udp_client, joint_angles):
@@ -105,22 +132,34 @@ def send_idle_mode(udp_client):
             can_data.Message_type['short']
         )
 
-# 🗣️ Voice Control Function
+# 🗣️ Voice Control Function using Vosk
 def voice_command(udp_client):
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening for voice command...")
-        try:
-            recognizer.adjust_for_ambient_noise(source)  # Adjust for background noise
-            audio = recognizer.listen(source)  # Capture audio
+    recognizer = KaldiRecognizer(vosk_model, 16000)
+    
+    mic = pyaudio.PyAudio()
+    stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
+    stream.start_stream()
 
-            # Convert speech to text
-            command_text = recognizer.recognize_google(audio)
-            print(f"Recognized: {command_text}")  # Debugging output
+    print("🎤 Listening for voice command...")
 
-            return process_ai_command(udp_client, command_text)
+    try:
+        while True:
+            data = stream.read(4096, exception_on_overflow=False)
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                command_text = result.get("text", "").strip()
 
-        except sr.UnknownValueError:
-            return "Could not understand the voice command."
-        except sr.RequestError:
-            return "Speech Recognition service unavailable."
+                if command_text:
+                    print(f"✅ Recognized: {command_text}")
+                    stream.stop_stream()
+                    stream.close()
+                    mic.terminate()
+                    return process_ai_command(udp_client, command_text)
+
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        speak(f"Error: {str(e)}")
+        stream.stop_stream()
+        stream.close()
+        mic.terminate()
+        return "Error processing voice command."
