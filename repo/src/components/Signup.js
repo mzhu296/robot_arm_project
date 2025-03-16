@@ -73,7 +73,7 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError]               = useState('');
   const [success, setSuccess]           = useState('');
-  const history = useNavigate();
+  const navigate = useNavigate();
 
   // Complete signup handler
   const handleSubmit = async (e) => {
@@ -102,9 +102,9 @@ const Signup = () => {
 
       if (response.ok) {
         setSuccess("Signup successful! Redirecting to login...");
-        // Optionally, clear the form or store user data
+        // Redirect to login page after 2 seconds
         setTimeout(() => {
-          history.push('/login');
+          navigate('/login');
         }, 2000);
       } else {
         // If response not ok, display the error message returned by the API
