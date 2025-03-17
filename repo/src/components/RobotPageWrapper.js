@@ -1,167 +1,46 @@
+// src/components/RobotPageWrapper.js
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { NavLink, useNavigate } from 'react-router-dom';
-import BackgroundImage from '../assets/Images/ArmImage3.jpeg';
 
-const SignupContainer = styled.div`
-  background: ${props => props.theme.body} url(${BackgroundImage}) no-repeat center center fixed;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
-`;
+function RobotPageWrapper() {
+  const [isLoading, setIsLoading] = useState(true);
 
-const SignupForm = styled.form`
-  background: ${props => props.theme.text};
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.3);
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const Title = styled.h1`
-  text-align: center;
-  margin-bottom: 1rem;
-  color: ${props => props.theme.body};
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  outline: none;
-`;
-
-const Button = styled(motion.button)`
-  padding: 0.75rem;
-  background: ${props => props.theme.body};
-  color: ${props => props.theme.text};
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  transition: background 0.3s ease;
-`;
-
-const LinkContainer = styled.div`
-  text-align: center;
-  margin-top: 1rem;
-  color: ${props => props.theme.body};
-  font-size: 0.9rem;
-`;
-
-const ErrorMessage = styled.p`
-  color: red;
-  text-align: center;
-`;
-
-const SuccessMessage = styled.p`
-  color: green;
-  text-align: center;
-`;
-
-const Signup = () => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [success, setSuccess]   = useState('');
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    setError('');
-
-    const payload = { username, email, password };
-
-    try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess("Signup successful! Redirecting to login...");
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        setError(data.message || "Signup failed. Please try again.");
-      }
-    } catch (err) {
-      console.error("Error during signup:", err);
-      setError("Server error. Please try again later.");
-    }
+  // Handle iframe load event
+  const handleLoad = () => {
+    setIsLoading(false);
   };
 
   return (
-    <SignupContainer>
-      <SignupForm onSubmit={handleSubmit}>
-        <Title>Sign Up</Title>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        {success && <SuccessMessage>{success}</SuccessMessage>}
-        <Input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <Input
-          type="password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-        <Button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          type="submit"
+    <div style={{ position: 'relative', width: '100%', height: '100vh', overflow: 'hidden' }}>
+      {isLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '1.5rem',
+            color: '#333',
+          }}
         >
-          Sign Up
-        </Button>
-        <LinkContainer>
-          Already have an account?{' '}
-          <NavLink to="/login" style={{ color: 'inherit', textDecoration: 'underline' }}>
-            Login
-          </NavLink>
-        </LinkContainer>
-      </SignupForm>
-    </SignupContainer>
+          Loading Vue Application...
+        </div>
+      )}
+      <iframe
+        title="VueApp"
+        src="http://localhost:3000" // URL where your Vue app is hosted
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          overflow: 'hidden',
+        }}
+        onLoad={handleLoad}
+      />
+    </div>
   );
-};
+}
 
-export default Signup;
+export default RobotPageWrapper;
