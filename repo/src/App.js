@@ -14,7 +14,8 @@ import WorkPage from './components/WorkPage';
 import RobotPageWrapper from './components/RobotPageWrapper';
 import SoundBar from './subComponents/SoundBar';
 import Login from './components/Login';
-import Signup from './components/Signup'
+import Signup from './components/Signup';
+import ControlPanel from './components/ControlPanel';
 
 function App() {
   const location = useLocation();
@@ -48,7 +49,7 @@ function App() {
       <GlobalStyle />
 
       <ThemeProvider theme={lightTheme}>
-        <SoundBar />
+
 
         {/* Framer-motion animation on page change */}
         <AnimatePresence mode="wait">
@@ -59,7 +60,8 @@ function App() {
             <Route path="/work" element={<WorkPage />} />
             <Route path="/robot" element={<RobotPageWrapper />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
+            <Route path="/signup" element={<Signup />} /> 
+            <Route path="/controlPanel" element={<ControlPanel />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>

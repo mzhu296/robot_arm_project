@@ -101,7 +101,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         setSuccess("Login successful! Redirecting...");
         setTimeout(() => {
-          navigate('/dashboard'); // Redirect to a protected/dashboard page
+          navigate('/controlPanel'); // Redirect to a protected/dashboard page
         }, 2000);
       } else {
         // If not OK, show the error message from backend
