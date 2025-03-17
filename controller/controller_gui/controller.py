@@ -4,6 +4,12 @@ from typing import Any
 from nicegui import ui
 from odrive.pyfibre import fibre
 from odrive.utils import dump_errors
+import can_data
+import struct
+import time
+import json
+import threading
+# from local_file_picker import local_file_picker
 
 default = {'motor': 0}
 motors_cfg = {'M1': 
@@ -97,193 +103,426 @@ buffer = []
 
 last_print_time = time.time()
 
-def controls(odrv) -> None:
-    def reboot() -> None:
-        try:
-            odrv.reboot()
-        except Exception as err:
-            if type(err).__name__ == 'ObjectLostError':
-                pass
-            else:
-                raise err
+def print_buffer():
+    global last_print_time, buffer
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    for data in buffer:
+        print(f"{data[0]}: Position: {data[1]}")
+    buffer.clear()
+    last_print_time = time.time()
+
+def check_and_print_buffer():
+    global last_print_time
+    if time.time() - last_print_time >= 10:
+        print_buffer()
+        
+def controls(client) -> None:
+    def get_reduction(i):
+        motor_keys = list(motors_cfg.keys()) 
+        motor_name = motor_keys[i]
+        return motors_cfg[motor_name]['reduction']
+         
+    def send_msg(id, type, cmd1, cmd2) -> None:
+         client.send_message(id, type, struct.pack('<I', cmd1), struct.pack('<I', cmd2), can_data.Message_type['short'])
+
+    def send_6d_msg(id, type, cmd1, cmd2) -> None:
+        for i in range(6):
+            cid = i + 1
+            client.send_message(cid, type, struct.pack('<I', cmd1), struct.pack('<I', cmd2), can_data.Message_type['short'])
+
+    def send_position(id, sign: int, position) -> None:
+        # print("send_position.....", id)
+        cid = int(id)
+        reduction_value = get_reduction(cid - 1)
+        motorCnt = position / 360.0 * reduction_value
+        pos = struct.pack('<f', sign * float(motorCnt))
+        cmd2 = struct.pack('<HH', 60, 10)
+        print(cid, sign, position, pos, cmd2)
+        client.send_message(cid, can_data.command_id['Set_Input_Pos'], pos, cmd2, can_data.Message_type['short'])
+
+    def send_torque(id, sign: int, position) -> None:
+        print("torque.....", sign, sign * float(position))
+        cid = int(7)
+        pos = struct.pack('<f', sign * float(position))
+        vel = struct.pack('<f', 1)
+        client.send_message(cid, can_data.command_id['Set_Controller_Mode'], struct.pack('<I', can_data.ControlMode['TORQUE_CONTROL']), struct.pack('<I', can_data.InputMode['PASSTHROUGH']), can_data.Message_type['short'])
+        send_msg(cid, can_data.command_id['Set_Axis_State'], can_data.AxisState['CLOSED_LOOP_CONTROL'], can_data.Message_type['short'])
+        client.send_message(cid, can_data.command_id['Set_Input_Vel'], vel, pos, can_data.Message_type['short'])
+
+    def set_abs_pos(id, sign: int, position) -> None:
+        # print("torque.....")
+        cid = int(7)
+        pos = struct.pack('<f', sign * float(position))
+        vel = struct.pack('<f', 30)
+        client.send_message(cid, can_data.command_id['Set_Controller_Mode'], struct.pack('<I', can_data.ControlMode['TORQUE_CONTROL']), struct.pack('<I', can_data.InputMode['PASSTHROUGH']), can_data.Message_type['short'])
+        send_msg(cid, can_data.command_id['Set_Axis_State'], can_data.AxisState['CLOSED_LOOP_CONTROL'], can_data.Message_type['short'])
+        client.send_message(cid, can_data.command_id['Set_Input_Vel'], vel, pos, can_data.Message_type['short'])
+
+    def send_6d_position(sign: int, position) -> None:
+        for i, a in enumerate(position):
+            cid = i + 1
+            # if i == 3
+            reduction_value = get_reduction(i)
+            motorCnt = a / 360.0 * reduction_value
+            pos = struct.pack('<f', sign * float(motorCnt))
+            cmd2 = struct.pack('<HH', 0x1f, 0)
+            client.send_message(cid, can_data.command_id['Set_Input_Pos'], pos, cmd2, can_data.Message_type['short'])
+            #give an break to make sure udp package sent out success
+            time.sleep(0.01)
+
+    def udp_callback(data):
+         update(data)
+    
+    def register_cb():
+        client.register_callback(udp_callback) 
+        send_msg(1, can_data.command_id['Set_Axis_State'], can_data.AxisState['IDLE'], can_data.Message_type['short'])        
+
+    def unregister_cb():
+        client.unregister_callback() 
+        info_status.set_text(f'CAN BUS: Not enabled')
+        info_status.style('color: #fc0320; font-weight: bold')
+
+    # with ui.row().classes('w-full justify-between items-center'):
+    #     with ui.row():
+    #         ui.button('Start', on_click=register_cb)
     
     with ui.row().classes('w-full justify-between items-center'):
         with ui.row():
-            ui.label(f'SN {hex(odrv.serial_number).removeprefix("0x").upper()}')
-            ui.label(f'HW {odrv.hw_version_major}.{odrv.hw_version_minor}.{odrv.hw_version_variant}')
-            ui.label(f'FW {odrv.fw_version_major}.{odrv.fw_version_minor}.{odrv.fw_version_revision} ' +
-                     f'{"(dev)" if odrv.fw_version_unreleased else ""}')
-            voltage = ui.label()
-            ui.timer(1.0, lambda: voltage.set_text(f'{odrv.vbus_voltage:.2f} V'))
+            # info_status = ui.label(f'CAN BUS:')
+            with ui.chat_message():
+                info_status = ui.label('CAN BUS:').props()
+            # info_status = ui.chat_message('Can Bus:',
+            #                 # name='Status',
+            #                 stamp='now',
+            #                 avatar='https://robohash.org/ui')
+            
         with ui.row():
-            ui.button(on_click=lambda: odrv.save_configuration()) \
-                .props('icon=save flat round') \
-                .tooltip('Save configuration')
-            ui.button(on_click=lambda: dump_errors(odrv, hasattr(odrv, 'clear_errors'))) \
-                .props('icon=bug_report flat round') \
-                .tooltip('Dump and clear errors')
-            ui.button(on_click=reboot) \
-                .props('icon=restart_alt flat round') \
-                .tooltip('Reboot rdrive')
+            ui.button(on_click=register_cb).props('icon=radio_button_checked round') \
+                                    .tooltip('Connect to CAN BUS')
+            ui.button(on_click=unregister_cb).props('icon=cancel round') \
+                                    .tooltip('Disconnect to CAN BUS')
+            ui.button(on_click=lambda: send_6d_msg(0, can_data.command_id['Set_Axis_State'], can_data.AxisState['CLOSED_LOOP_CONTROL'], 0)) \
+                .props('icon=repeat round') \
+                .tooltip('Enable all joints to close loop mode')
+            ui.button(on_click=lambda: send_6d_msg(0, can_data.command_id['Set_Axis_State'], can_data.AxisState['IDLE'], 0)).props('icon=close round') \
+                .tooltip('Enable all joints to idle mode')
+
+        # with ui.row():
+        #     ui.button(on_click=lambda: client.send_message("enable")) \
+        #         .props('icon=restart_alt flat round') \
+        #         .tooltip('enable monitor of can bus')
+
+    # let's set toggled motor
+    with ui.row():
+        mode = ui.toggle(MODES).bind_value(default, 'motor')
 
     with ui.row():
-        for a, axis in enumerate([odrv.axis0, odrv.axis1]):
-            if not axis.motor.is_calibrated:
-                continue
-            with ui.card(), ui.column():
-                _create_axis_column(a, axis, odrv)
+        count = 0
+        # forw_data = [0, 0.0]
+        for k,v in motors_cfg.items():
+            count += 1
+            # forw_data[0] += 1
+            with ui.card().bind_visibility_from(mode, 'value', value=0):
+                ui.markdown(f'##### {k}')
+                with ui.column():
+                    with ui.row():
+                            ui.label('Status:')
+                            ui.label('Status').bind_text_from(v, 'status')
+                            ui.label('Error:')
+                            ui.label('Error').bind_text_from(v, 'error')
+                            ui.label('V:')
+                            ui.label('V').bind_text_from(v, 'voltage')
+                            # ui.label('Iq:')
+                            # ui.label('Iq').bind_text_from(v, 'iq')
+                            # ui.label('T:')
+                            # ui.label('T').bind_text_from(v, 'ibus')
+                    with ui.row():
+                            ui.number('position', format='%.3f').bind_value(v, 'position').set_enabled(False)
+                            ui.number('velocity', format='%.3f').bind_value(v, 'velocity').set_enabled(False)
+                    with ui.row():
+                            ui.number('Iq', format='%.3f').bind_value(v, 'iq').set_enabled(False)
+                            ui.number('Ibus', format='%.3f').bind_value(v, 'ibus').set_enabled(False)
+                    with ui.column():
+                        with ui.row().classes('w-full'):
+                                ui.button(on_click=lambda count=count: send_msg(count, can_data.command_id['Set_Axis_State'], can_data.AxisState['CLOSED_LOOP_CONTROL'], 0)) \
+                                    .props('icon=repeat round') \
+                                    .tooltip('Enable close loop mode')
+                                ui.button(on_click=lambda count=count: send_msg(count, can_data.command_id['Set_Axis_State'], can_data.AxisState['IDLE'], 0)) \
+                                    .props('icon=close round') \
+                                    .tooltip('Enable idle mode')
+                                ui.button(on_click=lambda count=count: send_msg(count, can_data.command_id['Set_Linear_Count'], 0, 0)) \
+                                    .props('icon=adjust round') \
+                                    .tooltip('Apply absolute zero position')
+                                ui.button(on_click=lambda count=count: send_msg(count, can_data.command_id['Reboot'], can_data.Reboot['Reboot'], 0)) \
+                                    .props('icon=restart_alt round') \
+                                    .tooltip('Reboot motor')
+                # m1_pos = ui.label().bind_text_from(v, 'id')
+    # with ui.row():
+    #     with ui.card().bind_visibility_from(mode, 'value', value=1):
+    #         ui.markdown(f'##### Joint Control')
+    #         with ui.row():
+    #             with ui.column():
+    #                 can_id = ui.number('Joint id', value=0)
+    #             with ui.column():
+    #                 position = ui.number('Input position', value=0)
+    #                 def send_position_l(id, loc): send_position(id, loc, position.value)
+    #         with ui.row():
+    #                 ui.button(on_click=lambda: send_position_l(can_id.value, -1)).props('round flat icon=skip_previous')
+    #                 ui.button(on_click=lambda: send_position_l(can_id.value, 0)).props('round flat icon=exposure_zero')
+    #                 ui.button(on_click=lambda: send_position_l(can_id.value, 1)).props('round flat icon=skip_next')
+            
+    #     with ui.card().bind_visibility_from(mode, 'value', value=1):
+    #         ui.markdown(f'##### Rboot Arm Control')
+    #         with ui.row():
+    #             with ui.column():
+    #                 j1 = ui.number('J1', min=-175.00, max=175.00, value=0)
+    #             with ui.column():
+    #                 j2 = ui.number('J2', min=-115.00, max=75.00, value=0)
+    #             with ui.column():
+    #                 j3 = ui.number('J3', min=-60.00, max=90.00, value=0)
+    #             with ui.column():
+    #                 j4 = ui.number('J4', min=-180.00, max=180.00, value=0)
+    #             with ui.column():
+    #                 j5 = ui.number('J5', min=-110.00, max=120.00, value=0)
+    #             with ui.column():
+    #                 j6 = ui.number('J6', min=-180, max=180, value=0)
+    #         with ui.row():
+    #                 ui.button("Home", on_click=lambda: send_6d_position(0, [j1.value, j2.value, j3.value, j4.value, j5.value, j6.value])).props('round flat')
+    #                 ui.button("Send", on_click=lambda: send_6d_position(1, [j1.value, j2.value, j3.value, j4.value, j5.value, j6.value])).props('round flat')
 
-
-def _create_axis_column(index: int, axis: Any, odrv: Any) -> None:
-    ui.markdown(f'### Axis {index}')
-
-    with ui.row().classes('w-full justify-between items-center'):
-        power = ui.label()
-        button = ui.button(on_click=lambda: axis.clear_errors()) \
-            .props('icon=bug_report flat round').tooltip('Clear errors')
-        button.set_visibility(hasattr(axis, 'clear_errors'))
-
-    def update():
-        if axis.__class__ == fibre.libfibre.EmptyInterface:
-            return
-        power.set_text(f'{axis.motor.current_control.Iq_measured * axis.motor.current_control.v_current_control_integral_q:.1f} W')
-        button.set_enabled(axis.error != 0)
-
-    ui.timer(0.1, update)
-
-# dev0.axis0.config.can_node_id = 0x02
-# dev0.can.set_baud_rate(1000000)
-
-
-    ctr_cfg = axis.controller.config
-    mtr_cfg = axis.motor.config
-    enc_cfg = axis.encoder.config
-    trp_cfg = axis.trap_traj.config
-    can_cfg = odrv.can.config
-    can_axis_cfg = axis.config.can
-    print(can_axis_cfg)
-
-    with ui.row():
-        mode = ui.toggle(MODES).bind_value(ctr_cfg, 'control_mode')
-        ui.toggle(STATES) \
-            .bind_value_to(axis, 'requested_state', forward=lambda x: x or 0) \
-            .bind_value_from(axis, 'current_state')
-
+    # with ui.row():
+    #     with ui.card().bind_visibility_from(mode, 'value', value=1):
+    #         ui.markdown(f'##### Gripper Control')
+    #         with ui.row():
+    #             with ui.column():
+    #                 gripper_id = ui.number('Gripper id', value=7)
+    #             with ui.column():
+    #                 torque = ui.number('Input torque', value=0)
+    #                 def send_torque_l(id, loc): send_torque(id, loc, torque.value)
+    #             # with ui.column():
+    #             #     position = ui.number('Input position', value=0)
+    #             #     def send_position_l(id, loc): send_position(id, loc, position.value)
+    #         with ui.row():
+    #                 ui.button(on_click=lambda: send_torque_l(gripper_id.value, -1)).props('round flat icon=skip_previous')
+    #                 ui.button(on_click=lambda: send_torque_l(gripper_id.value, 0)).props('round flat icon=exposure_zero')
+    #                 ui.button(on_click=lambda: send_torque_l(gripper_id.value, 1)).props('round flat icon=skip_next')
     with ui.row():
         with ui.card().bind_visibility_from(mode, 'value', value=1):
-            ui.markdown('**Torque**')
-            torque = ui.number('input torque', value=0)
-            def send_torque(sign: int) -> None: axis.controller.input_torque = sign * float(torque.value)
+            ui.markdown('##### Joint Control')
             with ui.row():
-                ui.button(on_click=lambda: send_torque(-1)).props('round flat icon=remove')
-                ui.button(on_click=lambda: send_torque(0)).props('round flat icon=radio_button_unchecked')
-                ui.button(on_click=lambda: send_torque(1)).props('round flat icon=add')
-
-        with ui.card().bind_visibility_from(mode, 'value', value=2):
-            ui.markdown('**Velocity**')
-            velocity = ui.number('input velocity', value=0)
-            def send_velocity(sign: int) -> None: axis.controller.input_vel = sign * float(velocity.value)
+                with ui.column():
+                    ui.label('Joint id')
+                    can_id = ui.slider(min=0, max=10, value=0, step=1)
+                with ui.column():
+                    ui.label('Input position')
+                    position = ui.slider(min=-180, max=180, value=0)
+                    def send_position_l(id, loc):
+                        send_position(id, loc, position.value)
             with ui.row():
-                ui.button(on_click=lambda: send_velocity(-1)).props('round flat icon=fast_rewind')
-                ui.button(on_click=lambda: send_velocity(0)).props('round flat icon=stop')
-                ui.button(on_click=lambda: send_velocity(1)).props('round flat icon=fast_forward')
+                ui.button(on_click=lambda: send_position_l(can_id.value, -1)).props('round flat icon=skip_previous')
+                ui.button(on_click=lambda: send_position_l(can_id.value, 0)).props('round flat icon=exposure_zero')
+                ui.button(on_click=lambda: send_position_l(can_id.value, 1)).props('round flat icon=skip_next')
+                
+        with ui.card().bind_visibility_from(mode, 'value', value=1).classes('w-full'):
+            ui.markdown('##### Rboot Arm Control')
 
-        with ui.card().bind_visibility_from(mode, 'value', value=3):
-            ui.markdown('**Position**')
-            position = ui.number('input position', value=0)
-            def send_position(sign: int) -> None: axis.controller.input_pos = sign * float(position.value)
+            # A row that can wrap if needed
+            with ui.row().classes('flex-wrap w-full'):
+                with ui.column().classes('w-1/6'):
+                    ui.label('J1')
+                    j1 = ui.slider(min=-175.00, max=175.00, value=0).classes('w-full')
+
+                with ui.column().classes('w-1/6'):
+                    ui.label('J2')
+                    j2 = ui.slider(min=-115.00, max=75.00, value=0).classes('w-full')
+
+                with ui.column().classes('w-1/6'):
+                    ui.label('J3')
+                    j3 = ui.slider(min=-60.00, max=90.00, value=0).classes('w-full')
+
+                with ui.column().classes('w-1/6'):
+                    ui.label('J4')
+                    j4 = ui.slider(min=-180.00, max=180.00, value=0).classes('w-full')
+
+                with ui.column().classes('w-1/6'):
+                    ui.label('J5')
+                    j5 = ui.slider(min=-110.00, max=120.00, value=0).classes('w-full')
+
+                with ui.column().classes('w-1/6'):
+                    ui.label('J6')
+                    j6 = ui.slider(min=-180, max=180, value=0).classes('w-full')
+
             with ui.row():
-                ui.button(on_click=lambda: send_position(-1)).props('round flat icon=skip_previous')
-                ui.button(on_click=lambda: send_position(0)).props('round flat icon=exposure_zero')
-                ui.button(on_click=lambda: send_position(1)).props('round flat icon=skip_next')
+                ui.button("Home", on_click=lambda: send_6d_position(
+                    0, [j1.value, j2.value, j3.value, j4.value, j5.value, j6.value])
+                ).props('round flat')
+                ui.button("Send", on_click=lambda: send_6d_position(
+                    1, [j1.value, j2.value, j3.value, j4.value, j5.value, j6.value])
+                ).props('round flat')
 
-        with ui.column():
-            ui.number('pos_gain', format='%.3f').props('outlined').bind_value(ctr_cfg, 'pos_gain')
-            ui.number('vel_gain', format='%.3f').props('outlined').bind_value(ctr_cfg, 'vel_gain')
-            ui.number('vel_integrator_gain', format='%.3f').props('outlined').bind_value(ctr_cfg, 'vel_integrator_gain')
-            if hasattr(ctr_cfg, 'vel_differentiator_gain'):
-                ui.number('vel_differentiator_gain', format='%.3f').props('outlined').bind_value(ctr_cfg, 'vel_differentiator_gain')
+        with ui.row():
+            with ui.card().bind_visibility_from(mode, 'value', value=1):
+                ui.markdown('##### Gripper Control')
+                with ui.row():
+                    with ui.column():
+                        ui.label('Gripper id')
+                        gripper_id = ui.slider(min=0, max=10, value=7, step=1)
+                    with ui.column():
+                        ui.label('Input torque')
+                        torque = ui.slider(min=-100, max=100, value=0)
+                        def send_torque_l(id, loc):
+                            send_torque(id, loc, torque.value)
+                with ui.row():
+                    ui.button(on_click=lambda: send_torque_l(gripper_id.value, -1)).props('round flat icon=skip_previous')
+                    ui.button(on_click=lambda: send_torque_l(gripper_id.value, 0)).props('round flat icon=exposure_zero')
+                    ui.button(on_click=lambda: send_torque_l(gripper_id.value, 1)).props('round flat icon=skip_next')
 
-        with ui.column():
-            ui.number('vel_limit', format='%.3f').props('outlined').bind_value(ctr_cfg, 'vel_limit')
-            ui.number('enc_bandwidth', format='%.3f').props('outlined').bind_value(enc_cfg, 'bandwidth')
-            ui.number('current_lim', format='%.1f').props('outlined').bind_value(mtr_cfg, 'current_lim')
-            ui.number('cur_bandwidth', format='%.3f').props('outlined').bind_value(mtr_cfg, 'current_control_bandwidth')
-            ui.number('torque_lim', format='%.1f').props('outlined').bind_value(mtr_cfg, 'torque_lim')
-            ui.number('requested_cur_range', format='%.1f').props('outlined').bind_value(mtr_cfg, 'requested_current_range')
+    steps_container = ui.column()
 
-        with ui.card():
-            ui.markdown('**CAN BUS**')
-            ui.number('Baud rate', format='%d').props('outlined').bind_value(can_cfg, 'baud_rate')
-            ui.number('Bus id', format='%d').props('outlined').bind_value(can_axis_cfg, 'node_id')
-            ui.number('Heartbeat rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'heartbeat_rate_ms')
-            ui.number('Voltage/current rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'bus_vi_rate_ms')
-            ui.number('Encoder count rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'encoder_count_rate_ms')
-            ui.number('Encoder rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'encoder_rate_ms')
-            ui.number('Iq rate(ms)', format='%d').props('outlined').bind_value(can_axis_cfg, 'iq_rate_ms')
+    def add_angles():
+        # joint_angles.append(joint_angle_tmp)
+        with joint_angle_lock:
+            new_joint_angle = joint_angle_tmp.copy()
+            can_data.joint_angles.append(new_joint_angle)
+        update_list()
 
+    def remove_contact():
+        with joint_angle_lock:
+            can_data.joint_angles.pop()
+        update_list()
 
-    input_mode = ui.toggle(INPUT_MODES).bind_value(ctr_cfg, 'input_mode')
-    with ui.row():
-        ui.number('inertia', format='%.3f').props('outlined') \
-            .bind_value(ctr_cfg, 'inertia') \
-            .bind_visibility_from(input_mode, 'value', backward=lambda m: m in [2, 3, 5])
-        ui.number('velocity ramp rate', format='%.3f').props('outlined') \
-            .bind_value(ctr_cfg, 'vel_ramp_rate') \
-            .bind_visibility_from(input_mode, 'value', value=2)
-        ui.number('input filter bandwidth', format='%.3f').props('outlined') \
-            .bind_value(ctr_cfg, 'input_filter_bandwidth') \
-            .bind_visibility_from(input_mode, 'value', value=3)
-        ui.number('trajectory velocity limit', format='%.3f').props('outlined') \
-            .bind_value(trp_cfg, 'vel_limit') \
-            .bind_visibility_from(input_mode, 'value', value=5)
-        ui.number('trajectory acceleration limit', format='%.3f').props('outlined') \
-            .bind_value(trp_cfg, 'accel_limit') \
-            .bind_visibility_from(input_mode, 'value', value=5)
-        ui.number('trajectory deceleration limit', format='%.3f').props('outlined') \
-            .bind_value(trp_cfg, 'decel_limit') \
-            .bind_visibility_from(input_mode, 'value', value=5)
-        ui.number('torque ramp rate', format='%.3f').props('outlined') \
-            .bind_value(ctr_cfg, 'torque_ramp_rate') \
-            .bind_visibility_from(input_mode, 'value', value=6)
-        ui.number('mirror ratio', format='%.3f').props('outlined') \
-            .bind_value(ctr_cfg, 'mirror_ratio') \
-            .bind_visibility_from(input_mode, 'value', value=7)
-        ui.toggle({0: 'axis 0', 1: 'axis 1'}) \
-            .bind_value(ctr_cfg, 'axis_to_mirror', forward=lambda x: 255 if x is None else x) \
-            .bind_visibility_from(input_mode, 'value', value=7)
+    def send_steps_thread(d, r):
+        for c in range(int(r)):
+            for i, a in enumerate(can_data.joint_angles):
+                send_6d_position(1, [a['J1'], a['J2'], a['J3'], a['J4'], a['J5'], a['J6']])
+                if a['Gripper'] == 0:
+                    send_torque(7, -1.0, a['Torque'])    
+                    ui.notify(f'Gripper has been opened {a["Torque"]}')
+                else:
+                    send_torque(7, 1, a['Torque'])    
+                ui.notify(f'Gripper has been closed {a["Torque"]}')            
+                time.sleep(d)
 
-    def pos_push() -> None:
-        pos_plot.push([datetime.now()], [[axis.controller.input_pos], [axis.encoder.pos_estimate]])
-    pos_check = ui.checkbox('Position plot')
-    pos_plot = ui.line_plot(n=2, update_every=10).with_legend(['input_pos', 'pos_estimate'], loc='upper left', ncol=2)
-    pos_timer = ui.timer(0.05, pos_push)
-    pos_check.bind_value_to(pos_plot, 'visible').bind_value_to(pos_timer, 'active')
+    def repeat_steps(d, r):
+        t = threading.Thread(target=send_steps_thread(d, r))
+        t.start()
 
-    def vel_push() -> None:
-        vel_plot.push([datetime.now()], [[axis.controller.input_vel], [axis.encoder.vel_estimate]])
-    vel_check = ui.checkbox('Velocity plot')
-    vel_plot = ui.line_plot(n=2, update_every=10).with_legend(['input_vel', 'vel_estimate'], loc='upper left', ncol=2)
-    vel_timer = ui.timer(0.05, vel_push)
-    vel_check.bind_value_to(vel_plot, 'visible').bind_value_to(vel_timer, 'active')
+    async def pick_file() -> None:
+        # result = await local_file_picker('~', multiple=False)
+        # if result:
+        #     joint_json = result[0]
+        #     with open(joint_json, 'w') as file:
+        #         json.dump(can_data.joint_angles, file, indent=4)
+        #     ui.notify(f'You saved {joint_json}')
+            update_list()
 
-    def id_push() -> None:
-        id_plot.push([datetime.now()], [[axis.motor.current_control.Id_setpoint], [axis.motor.current_control.Id_measured]])
-    id_check = ui.checkbox('Id plot')
-    id_plot = ui.line_plot(n=2, update_every=10).with_legend(['Id_setpoint', 'Id_measured'], loc='upper left', ncol=2)
-    id_timer = ui.timer(0.05, id_push)
-    id_check.bind_value_to(id_plot, 'visible').bind_value_to(id_timer, 'active')
+    async def open_file() -> None:
+        # result = await local_file_picker('~', multiple=False)
+        # if result:
+        #     joint_json = result[0]
+        #     with open(joint_json, 'r') as file:
+        #         loaded_joint_angles = json.load(file)
+        #         can_data.joint_angles = loaded_joint_angles
+        #     ui.notify(f'You opened {joint_json}')
+            update_list()
 
-    def iq_push() -> None:
-        iq_plot.push([datetime.now()], [[axis.motor.current_control.Iq_setpoint], [axis.motor.current_control.Iq_measured]])
-    iq_check = ui.checkbox('Iq plot')
-    iq_plot = ui.line_plot(n=2, update_every=10).with_legend(['Iq_setpoint', 'Iq_measured'], loc='upper left', ncol=2)
-    iq_timer = ui.timer(0.05, iq_push)
-    iq_check.bind_value_to(iq_plot, 'visible').bind_value_to(iq_timer, 'active')
+    def send_steps(i):
+        ui.notify(f'Step {i} position has been sent out!!!')
+        tmp_angle = can_data.joint_angles[i-1]
+        send_6d_position(1, [tmp_angle['J1'], tmp_angle['J2'], tmp_angle['J3'], tmp_angle['J4'], tmp_angle['J5'], tmp_angle['J6']])
+        if tmp_angle['Gripper'] == 0:
+            send_torque(7, -1.0, tmp_angle['Torque'])    
+            ui.notify(f'Gripper has been opened {tmp_angle["Torque"]}')
+        else:
+            send_torque(7, 1, tmp_angle['Torque'])    
+            ui.notify(f'Gripper has been closed {tmp_angle["Torque"]}')            
+    def update_list():
+            steps_container.clear()
+            with steps_container:
+                with ui.card().bind_visibility_from(mode, 'value', value=2):
+                    with ui.list().props('bordered separator'):
+                        with ui.column():
+                            with ui.row().classes('w-full'):
+                                d = ui.number('Step delays(s)', format='%.3f', value=1.5) 
+                                r = ui.number('Repeat times', format='%d', value=1) 
+                                def send_delay_l(): repeat_steps(d.value, r.value)
+                                ui.button('Add', on_click=add_angles)
+                                ui.button('Delete', on_click=remove_contact)
+                                ui.button('Repeat', on_click=send_delay_l)
+                                ui.button('Save', on_click=pick_file)
+                                ui.button('Open', on_click=open_file)
+                            ui.separator()
+                        with ui.column():
+                            with ui.row().classes('w-full'):
+                                for i, a in enumerate(can_data.joint_angles):
+                                    item_select = ui.item(on_click=lambda i=i: send_steps(i + 1))
+                                    item_select.default_classes('bg-blue-100 p-2')
+                                    with item_select:
+                                        with ui.item_section().props('avatar'):
+                                            ui.icon('precision_manufacturing')
+                                        with ui.item_section(f'Step {i+1}'):
+                                            ui.number('Joint1', format='%.3f', value=a['J1'])                                      
+                                            ui.number('Joint2', format='%.3f', value=a['J2'])                                      
+                                            ui.number('Joint3', format='%.3f', value=a['J3'])                                      
+                                            ui.number('Joint4', format='%.3f', value=a['J4'])                                      
+                                            ui.number('Joint5', format='%.3f', value=a['J5'])                                      
+                                            ui.number('Joint6', format='%.3f', value=a['J6'])
+                                            ui.number('Gripper', format='%.0f', value=a['Gripper'])                                     
+                                            # ui.number('Delay', format='%.3f', value=a['Delay'])                                      
 
-    def t_push() -> None:
-        t_plot.push([datetime.now()], [[axis.motor.fet_thermistor.temperature]])
-    t_check = ui.checkbox('Temperature plot')
-    t_plot = ui.line_plot(n=1, update_every=10)
-    t_timer = ui.timer(0.05, t_push)
-    t_check.bind_value_to(t_plot, 'visible').bind_value_to(t_timer, 'active')
+    def update(data):
+        #data = client.get_buffer_data()
+        if data is None:
+            info_status.set_text(f'CAN BUS: Not enabled')
+            info_status.style('color: #fc0320; font-weight: bold')
+        else:
+            info_status.set_text(f'CAN BUS: Enabled')
+            info_status.style('color: #03fc1c; font-weight: bold')
+            # Split the string by spaces and convert each hexadecimal value to an integer
+            int_values = [int(x, 16) for x in data.split()]
+            byte_array = struct.pack('12B', *int_values)
+            # print(int_values, byte_array)
+            if len(byte_array) == 12:
+                msg = can_data.pack_can_message(byte_array)
+                # print(msg)
+                count = 0
+                id = msg.get('id')
+                if id >= 0x30: print('CAN BUS ID MUST less than 48(0x30)!!!')
+                for k,v in motors_cfg.items():
+                    count += 1
+                    if k == 'M'+str(count) and count == id:
+                        type = msg.get('type')
+                        body = msg.get('body')
+                        if type == can_data.command_id['Get_Encoder_Estimates']:
+                            pos, vel = struct.unpack('<ff', body)
+                            # current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+                            # buffer.append((current_time, pos))
+                            # check_and_print_buffer()
+                            r_v = get_reduction(id - 1)
+                            v['position'] = (360.0 * pos)/ r_v
+                            with joint_angle_lock:
+                                joint_angle_tmp['J'+str(count)] = (360.0 * pos)/ r_v
+                            v['velocity'] = vel
+                            if id == 5 and v['teaching'] == 1: 
+                                 teaching.append(pos)
+                                #  print(v['teaching'])
+                        elif type == can_data.command_id['Heartbeat']:
+                            error, state, result, traj_done, reserved = struct.unpack('<IBBBB', body)
+                            if result == 0:
+                                v['status'] = state
+                                v['error'] = error
+                        elif type == can_data.command_id['Get_Bus_Voltage_Current']:
+                             vol, iq = struct.unpack('<ff', body)
+                             v['voltage'] = round(vol, 2)
+                             v['ibus'] = iq
+                        elif type == can_data.command_id['Get_Iq']:
+                             iqs, iq = struct.unpack('<ff', body)
+                            #  v['ibus'] = iqs
+                             v['iq'] = iq 
+                        elif type == can_data.command_id['Get_Temperature']:
+                             f, m = struct.unpack('<ff', body)
+                             print(f, m)
+    # ui.timer(0.01, update)
+    # ui.timer.cancel
+    update_list()
+
