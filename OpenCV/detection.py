@@ -1,69 +1,89 @@
-# Imports 
-import cv2 # Import OpenCV
-import numpy as np # Import numpy
+import cv2 as cv
+from cv2 import aruco
+import numpy as np
+import os
 
-# Load model files (deploy.prototxt and mobilenet.caffemodel)
-prototxt_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\deploy.prototxt" # prototxt model
-caffemodel_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\mobilenet_iter_73000.caffemodel" # caffe model
-net = cv2.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
+# Load camera calibration data
+script_dir = os.path.dirname(__file__)  
+calib_data_path = os.path.join(script_dir, "MultiMatrix.npz")  
+
+calib_data = np.load(calib_data_path)
+cam_mat = calib_data["camMatrix"]
+dist_coef = calib_data["distCoef"]
+
+# ArUco Marker settings
+MARKER_SIZE = 10  # cm
+marker_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_250)
+param_markers = aruco.DetectorParameters()
+
+# Load MobileNet Model
+prototxt_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\deploy.prototxt"
+caffemodel_path = r"C:\SE4450\ArmApplication\SE4450_Team21_ArmApplication\OpenCV\mobilenet_iter_73000.caffemodel"
+net = cv.dnn.readNetFromCaffe(prototxt_path, caffemodel_path)
 
 # List of detectable objects
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
 
-# Constants for distance estimation
-KNOWN_HEIGHTS = {
-    "person": 170,  # cm
-    "bottle": 25,   # cm
-    "tvmonitor": 50, # cm
-}  
-FOCAL_LENGTH = 500  # Adjustable if needed
+# Assign each ArUco ID a default object class (cycling through the CLASSES list)
+aruco_id_to_class = {i: CLASSES[i % len(CLASSES)] for i in range(100)}
 
-# Start webcam
-cap = cv2.VideoCapture(0)
-#Begin reading frame
+# Constants for object distance estimation
+KNOWN_HEIGHTS = {
+    "person": 170,  
+    "bottle": 25,   
+    "tvmonitor": 50, 
+}  
+FOCAL_LENGTH = 500  
+
+# Start video capture
+cap = cv.VideoCapture(0)
+
 while True:
     ret, frame = cap.read()
     if not ret:
         break
+
+    # Convert to grayscale for better detection
+    gray_frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
+  # Detect ArUco markers
+    marker_corners, marker_IDs, _ = aruco.detectMarkers(gray_frame, marker_dict, parameters=param_markers)
+
+    # ✅ Ensure both marker_IDs and marker_corners are valid
+    if marker_IDs is not None and marker_corners is not None and len(marker_IDs) > 0:
+     rVec, tVec, _ = aruco.estimatePoseSingleMarkers(marker_corners, MARKER_SIZE, cam_mat, dist_coef)
     
-    # Convert frame to blob for neural network processing
-    blob = cv2.dnn.blobFromImage(frame, 0.007843, (300, 300), 127.5)
-    net.setInput(blob)
-    detections = net.forward()
+    for i, (ids, corners) in enumerate(zip(marker_IDs, marker_corners)):
+        marker_id = ids[0]
+        marker_name = aruco_id_to_class.get(marker_id, "Unknown")
+
+        # Draw marker boundary
+        cv.polylines(frame, [corners.astype(np.int32)], True, (0, 255, 255), 4, cv.LINE_AA)
+
+        # Reshape corners and extract positions
+        corners = corners.reshape(4, 2).astype(int)
+        top_right, top_left, bottom_right, bottom_left = corners
+
+        # Calculate distance from camera
+        distance = np.sqrt(tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2)
+
+        # Draw pose axes
+        cv.drawFrameAxes(frame, cam_mat, dist_coef, rVec[i], tVec[i], 4, 4)
+
+        # Display marker ID and assigned name
+        cv.putText(frame, f"ID: {marker_id} | {marker_name}", top_right, cv.FONT_HERSHEY_PLAIN, 1.3, (0, 0, 255), 2, cv.LINE_AA)
+        cv.putText(frame, f"Dist: {round(distance, 2)}cm", bottom_right, cv.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 2, cv.LINE_AA)
+
+
+
+    # Show the frame
+    cv.imshow("ArUco Marker + Object Detection", frame)
     
-    # Loop through detected objects
-    for i in range(detections.shape[2]):
-        confidence = detections[0, 0, i, 2]
-        if confidence > 0.2:  # Confidence threshold
-            idx = int(detections[0, 0, i, 1])
-            class_name = CLASSES[idx]
-            # dectection box build
-            box = detections[0, 0, i, 3:7] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-            (startX, startY, endX, endY) = box.astype("int")
-            
-            # Calculate bounding box height
-            height_pixels = endY - startY
-            
-            # Estimate distance if object height is known
-            distance = "Unknown"
-            if class_name in KNOWN_HEIGHTS and height_pixels > 0:
-                real_height = KNOWN_HEIGHTS[class_name]
-                distance = (real_height * FOCAL_LENGTH) / height_pixels
-                distance = f"{distance:.2f} cm"
-            
-            # Draw bounding box and labels
-            label = f"{class_name}: {confidence * 100:.2f}% | {distance}"
-            cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
-            cv2.putText(frame, label, (startX, startY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-    
-    # Display the frame
-    cv2.imshow("Object Detection with Distance Estimation", frame)
-    
-    # Exit with 'q' key
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Exit on 'q' key press
+    if cv.waitKey(1) & 0xFF == ord("q"):
         break
 
-# Release resources
+# Cleanup
 cap.release()
-cv2.destroyAllWindows()
+cv.destroyAllWindows()
