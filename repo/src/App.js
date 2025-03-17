@@ -16,6 +16,7 @@ import SoundBar from './subComponents/SoundBar';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import ControlPanel from './components/ControlPanel';
+import Settings from './components/Settings';
 
 function App() {
   const location = useLocation();
@@ -62,6 +63,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} /> 
             <Route path="/controlPanel" element={<ControlPanel />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>
