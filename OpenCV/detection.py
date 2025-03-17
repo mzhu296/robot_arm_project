@@ -50,32 +50,33 @@ while True:
   # Detect ArUco markers
     marker_corners, marker_IDs, _ = aruco.detectMarkers(gray_frame, marker_dict, parameters=param_markers)
 
+    # Detect ArUco markers
+    marker_corners, marker_IDs, _ = aruco.detectMarkers(gray_frame, marker_dict, parameters=param_markers)
+
     # ✅ Ensure both marker_IDs and marker_corners are valid
     if marker_IDs is not None and marker_corners is not None and len(marker_IDs) > 0:
-     rVec, tVec, _ = aruco.estimatePoseSingleMarkers(marker_corners, MARKER_SIZE, cam_mat, dist_coef)
+        rVec, tVec, _ = aruco.estimatePoseSingleMarkers(marker_corners, MARKER_SIZE, cam_mat, dist_coef)
     
-    for i, (ids, corners) in enumerate(zip(marker_IDs, marker_corners)):
-        marker_id = ids[0]
-        marker_name = aruco_id_to_class.get(marker_id, "Unknown")
+        for i, (ids, corners) in enumerate(zip(marker_IDs, marker_corners)):  # ✅ Only runs when markers exist
+            marker_id = ids[0]
+            marker_name = aruco_id_to_class.get(marker_id, "Unknown")
 
-        # Draw marker boundary
-        cv.polylines(frame, [corners.astype(np.int32)], True, (0, 255, 255), 4, cv.LINE_AA)
+            # Draw marker boundary
+            cv.polylines(frame, [corners.astype(np.int32)], True, (0, 255, 255), 4, cv.LINE_AA)
 
-        # Reshape corners and extract positions
-        corners = corners.reshape(4, 2).astype(int)
-        top_right, top_left, bottom_right, bottom_left = corners
+            # Reshape corners and extract positions
+            corners = corners.reshape(4, 2).astype(int)
+            top_right, top_left, bottom_right, bottom_left = corners
 
-        # Calculate distance from camera
-        distance = np.sqrt(tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2)
+            # Calculate distance from camera
+            distance = np.sqrt(tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2)
 
-        # Draw pose axes
-        cv.drawFrameAxes(frame, cam_mat, dist_coef, rVec[i], tVec[i], 4, 4)
+            # Draw pose axes
+            cv.drawFrameAxes(frame, cam_mat, dist_coef, rVec[i], tVec[i], 4, 4)
 
-        # Display marker ID and assigned name
-        cv.putText(frame, f"ID: {marker_id} | {marker_name}", top_right, cv.FONT_HERSHEY_PLAIN, 1.3, (0, 0, 255), 2, cv.LINE_AA)
-        cv.putText(frame, f"Dist: {round(distance, 2)}cm", bottom_right, cv.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 2, cv.LINE_AA)
-
-
+            # Display marker ID and assigned name
+            cv.putText(frame, f"ID: {marker_id} | {marker_name}", top_right, cv.FONT_HERSHEY_PLAIN, 1.3, (0, 0, 255), 2, cv.LINE_AA)
+            cv.putText(frame, f"Dist: {round(distance, 2)}cm", bottom_right, cv.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 255), 2, cv.LINE_AA)
 
     # Show the frame
     cv.imshow("ArUco Marker + Object Detection", frame)
