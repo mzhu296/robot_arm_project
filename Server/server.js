@@ -13,6 +13,22 @@ app.use(express.json());
 app.use(cors());
 
 
+app.post('/api/joint-values', (req, res) => {
+  const { name, direction, value } = req.body;
+
+  // Validate the incoming data
+  if (!name || !direction || typeof value !== 'number') {
+      return res.status(400).json({ error: 'Invalid input data.' });
+  }
+
+  // Log the received data
+  console.log(`Joint: ${name}, Direction: ${direction}, Value: ${value}`);
+
+  // Respond to the client
+  res.status(200).json({ message: 'Joint value received successfully.' });
+});
+
+
 // Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
