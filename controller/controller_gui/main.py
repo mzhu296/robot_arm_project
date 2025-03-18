@@ -4,7 +4,7 @@ import time
 from nicegui import app, ui
 from udpclient import UDPClient
 from controls import controls
-from ai_controller import process_ai_command  # Import AI module
+from ai_controller import process_ai_command, voice_command  # 🗣️ Import voice control
 
 logging.getLogger('nicegui').setLevel(logging.ERROR)
 ui.colors(primary='#6e93d6')
@@ -28,6 +28,9 @@ async def discovery_loop():
             # AI Command Input UI
             command_box = ui.textarea('Enter AI Command')
             ui.button('Send to AI', on_click=lambda: ui.notify(process_ai_command(client, command_box.value)))
+
+            # 🗣️ Voice Command Button
+            ui.button("🎤 Speak Command", on_click=lambda: ui.notify(voice_command(client)))
 
     else:
         print("Not connected to the server.")
