@@ -129,7 +129,8 @@ const ControlPanel = () => {
     { label: '🚀 Arm Control', route: '/robot' },
     { label: '⚙️ Settings',   route: '/settings' },
     { label: '📜 Logs',       route: '/logs' },
-    { label: '📖 User Manual',route: '/userManual' }
+    { label: '📖 User Manual',route: '/userManual' },
+    { label: '🎥 Video Demo', route: '/video-demo' }
   ];
 
   const handleNavigation = (page, route) => {
@@ -213,7 +214,7 @@ const ControlPanel = () => {
           <QuickLinkCard whileHover={{ y: -5 }} onClick={() => navigate('/diagnostics')}>
             ⚡ Diagnostics
           </QuickLinkCard>
-          <QuickLinkCard whileHover={{ y: -5 }} onClick={() => alert('Maintenance panel opened!')}>
+          <QuickLinkCard whileHover={{ y: -5 }} onClick={() => alert('Maintenance Not Required!')}>
             🧰 Maintenance
           </QuickLinkCard>
         </QuickLinks>

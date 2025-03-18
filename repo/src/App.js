@@ -20,6 +20,7 @@ import Settings from './components/Settings';
 import Logs from './components/Logs';
 import UserManualPage from './components/UserManual';
 import DiagnosticPanel from './components/DiagnosticPanel';
+import VideoDemoPage from './components/Video Demo';
 
 function App() {
   const location = useLocation();
@@ -70,6 +71,7 @@ function App() {
             <Route path="/logs" element={<Logs />} />
             <Route path="/userManual" element={<UserManualPage />} />
             <Route path="/diagnostics" element={<DiagnosticPanel />} />
+            <Route path="/video-demo" element={<VideoDemoPage />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>
