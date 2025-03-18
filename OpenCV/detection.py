@@ -28,14 +28,6 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus"
 # Assign each ArUco ID a default object class (cycling through the CLASSES list)
 aruco_id_to_class = {i: CLASSES[i % len(CLASSES)] for i in range(100)}
 
-# Constants for object distance estimation
-KNOWN_HEIGHTS = {
-    "person": 170,  
-    "bottle": 25,   
-    "tvmonitor": 50, 
-}  
-FOCAL_LENGTH = 500  
-
 # Start video capture
 cap = cv.VideoCapture(0)
 
