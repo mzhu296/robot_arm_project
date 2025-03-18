@@ -18,6 +18,8 @@ import Signup from './components/Signup';
 import ControlPanel from './components/ControlPanel';
 import Settings from './components/Settings';
 import Logs from './components/Logs';
+import UserManualPage from './components/UserManual';
+import DiagnosticPanel from './components/DiagnosticPanel';
 
 function App() {
   const location = useLocation();
@@ -66,6 +68,8 @@ function App() {
             <Route path="/controlPanel" element={<ControlPanel />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/logs" element={<Logs />} />
+            <Route path="/userManual" element={<UserManualPage />} />
+            <Route path="/diagnostics" element={<DiagnosticPanel />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>

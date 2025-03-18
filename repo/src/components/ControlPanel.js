@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 // Layout & Basic Styling
 // =======================
 
-// Main container for the control panel (sidebar + main content)
 const PanelContainer = styled.div`
   display: flex;
   height: 100vh;
@@ -15,7 +14,6 @@ const PanelContainer = styled.div`
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
-// Sidebar navigation
 const Sidebar = styled.div`
   width: 220px;
   background: #1e293b;
@@ -26,7 +24,6 @@ const Sidebar = styled.div`
   gap: 1rem;
 `;
 
-// Sidebar buttons, highlighting the active page
 const SidebarButton = styled(motion.button)`
   background: ${({ active }) => (active ? '#3b82f6' : 'transparent')};
   border: none;
@@ -42,34 +39,26 @@ const SidebarButton = styled(motion.button)`
   }
 `;
 
-// Main content area
 const MainArea = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
 `;
 
-// =======================
-// Reusable UI Components
-// =======================
-
-// A reusable card for dashboard sections
 const DashboardCard = styled(motion.div)`
   background: white;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 `;
 
-// A container holding small “quick link” cards for shortcuts
 const QuickLinks = styled.div`
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
 `;
 
-// Individual quick link cards
 const QuickLinkCard = styled(motion.div)`
   flex: 1;
   padding: 1rem;
@@ -84,11 +73,10 @@ const QuickLinkCard = styled(motion.div)`
   }
 `;
 
-// Chat box wrapper
 const ChatBox = styled.div`
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   padding: 1rem;
   height: 250px;
   overflow-y: auto;
@@ -98,7 +86,6 @@ const ChatBox = styled.div`
   margin-bottom: 1rem;
 `;
 
-// Chat input styling
 const ChatInput = styled.input`
   width: 100%;
   padding: 0.75rem;
@@ -106,12 +93,11 @@ const ChatInput = styled.input`
   border: 1px solid #ddd;
 `;
 
-// Activity Log container
 const ActivityLog = styled.div`
   background: white;
   border-radius: 10px;
   padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   margin-top: 1.5rem;
 `;
 
@@ -126,63 +112,95 @@ const ActivityItem = styled.div`
 // =======================
 // Main Component
 // =======================
-
 const ControlPanel = () => {
   const navigate = useNavigate();
 
-  // Track which sidebar page is currently active
-  const [activePage, setActivePage] = useState('Dashboard');
-
-  // AI Chat states
+  const [activePage, setActivePage] = useState('🎛️ Dashboard');
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
 
-  // Sidebar navigation click
-  const handleNavigation = (page, route) => {
-    setActivePage(page);
-    if (route) navigate(route);
-  };
-  
-
-  // Send a chat message on Enter
-  const handleSendChat = (e) => {
-    if (e.key === 'Enter' && chatInput.trim() !== '') {
-      setChatMessages([...chatMessages, { text: chatInput, sender: 'user' }]);
-      setChatInput('');
-      // Simulate AI response
-      setTimeout(() => {
-        setChatMessages(prev => [...prev, { text: 'AI response here...', sender: 'ai' }]);
-      }, 800);
-    }
-  };
+  // Example base URL and chat ID for your maxKB AI endpoint
+  const BASE_URL = 'http://localhost:8080/api/application/675917aa-03bf-11f0-9ac2-0242ac110002';
+  const CHAT_ID  = '95a1a1b2eea0164a';
+  const AI_ENDPOINT = `${BASE_URL}/chat_message/${CHAT_ID}`;
 
   const pages = [
     { label: '🎛️ Dashboard', route: '/controlPanel' },
     { label: '🚀 Arm Control', route: '/robot' },
-    { label: '⚙️ Settings', route: '/settings' },
-    { label: '📜 Logs', route: '/logs' }
+    { label: '⚙️ Settings',   route: '/settings' },
+    { label: '📜 Logs',       route: '/logs' },
+    { label: '📖 User Manual',route: '/userManual' }
   ];
 
-  return (
-    
+  const handleNavigation = (page, route) => {
+    setActivePage(page);
+    if (route) navigate(route);
+  };
 
+  /**
+   * handleSendChat
+   *  - triggered onKeyDown in ChatInput
+   */
+  const handleSendChat = async (e) => {
+    if (e.key === 'Enter' && chatInput.trim() !== '') {
+      const userMsg = chatInput.trim();
+      setChatMessages((prev) => [...prev, { text: userMsg, sender: 'user' }]);
+      setChatInput('');
+
+      try {
+        const payload = {
+          message: userMsg,
+          re_chat: false,
+          stream: true,
+          form_data: {},
+          image_list: [],
+          document_list: [],
+          audio_list: [],
+          runtime_node_id: '',
+          node_data: {},
+          chat_record_id: '',
+          child_node: {}
+        };
+
+        const response = await fetch(AI_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error from AI: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const aiReply = data.message || 'No response from AI';
+
+        setChatMessages((prev) => [...prev, { text: aiReply, sender: 'ai' }]);
+      } catch (err) {
+        console.error('Error sending message to AI:', err);
+        setChatMessages((prev) => [...prev, { text: `Error: ${err.message}`, sender: 'ai' }]);
+      }
+    }
+  };
+
+  return (
     <PanelContainer>
-      {/* ========== Sidebar ========== */}
       <Sidebar>
         {pages.map(({ label, route }) => (
-            <SidebarButton
+          <SidebarButton
             key={label}
             active={activePage === label}
             onClick={() => handleNavigation(label, route)}
-            >
+          >
             {label}
-            </SidebarButton>
+          </SidebarButton>
         ))}
-        </Sidebar>
+      </Sidebar>
 
-      {/* ========== Main Content ========== */}
       <MainArea>
-        {/* A simple Dashboard Overview */}
+        {/* Dashboard Overview */}
         <DashboardCard initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Dashboard Overview</h2>
           <p><strong>Arm Position:</strong> 30° angle</p>
@@ -190,20 +208,17 @@ const ControlPanel = () => {
           <p><strong>Battery:</strong> 78%</p>
         </DashboardCard>
 
-        {/* Quick Links (different from the sidebar) */}
+        {/* Quick Links */}
         <QuickLinks>
-          <QuickLinkCard whileHover={{ y: -5 }} onClick={() => alert('Diagnostics panel opened!')}>
+          <QuickLinkCard whileHover={{ y: -5 }} onClick={() => navigate('/diagnostics')}>
             ⚡ Diagnostics
           </QuickLinkCard>
           <QuickLinkCard whileHover={{ y: -5 }} onClick={() => alert('Maintenance panel opened!')}>
             🧰 Maintenance
           </QuickLinkCard>
-          <QuickLinkCard whileHover={{ y: -5 }} onClick={() => alert('User Manual opened!')}>
-            📖 User Manual
-          </QuickLinkCard>
         </QuickLinks>
 
-        {/* AI Chat Card */}
+        {/* AI Chat Card
         <DashboardCard initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h3>🤖 Arm Assistant</h3>
           <ChatBox>
@@ -216,9 +231,22 @@ const ControlPanel = () => {
           <ChatInput
             placeholder="Ask AI about the arm..."
             value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
+            onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={handleSendChat}
           />
+        </DashboardCard> */}
+
+        {/* === Embedded Chat Interface === */}
+        <DashboardCard initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <div style={{ width: '100%', height: '500px' }}>
+            <iframe
+              src="http://localhost:8080/ui/chat/95a1a1b2eea0164a"
+              style={{ width: '100%', height: '100%' }}
+              frameBorder="0"
+              allow="microphone"
+              title="Chat Interface"
+            />
+          </div>
         </DashboardCard>
 
         {/* Activity Log */}
