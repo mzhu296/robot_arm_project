@@ -157,7 +157,7 @@ const ControlPanel = () => {
   };
 
   const pages = [
-    { label: '🎛️ Dashboard', route: '/dashboard' },
+    { label: '🎛️ Dashboard', route: '/controlPanel' },
     { label: '🚀 Arm Control', route: '/robot' },
     { label: '⚙️ Settings', route: '/settings' },
     { label: '📜 Logs', route: '/logs' }

@@ -100,11 +100,11 @@
       </div>
     </div>
 
-    <!-- Activity Logs Section -->
+    <!-- Local Activity Logs (optional immediate display) -->
     <div class="activity-logs">
       <h2>Recent Activity</h2>
       <el-scrollbar height="200px">
-        <!-- The newest item is displayed first -->
+        <!-- The newest entry is displayed first (unshift in recordActivity) -->
         <div v-for="(log, index) in activityLogs" :key="index" class="log-item">
           <strong>{{ log.timestamp }}</strong> —
           <span>{{ log.message }}</span>
@@ -117,7 +117,6 @@
 <script setup>
 import { ref, defineEmits } from "vue";
 
-// ===== States for the Switch & Sliders =====
 const mouseValue = ref(true);
 const value1 = ref(0);
 const value2 = ref(0);
@@ -127,60 +126,82 @@ const value5_1 = ref(0);
 const value5_2 = ref(0);
 const value5_3 = ref(0);
 
-// ===== Command Input =====
 const command = ref("");
 
-// ===== Slider Range Config =====
 const min = ref(Number(-Math.PI.toFixed(2)));
 const max = ref(Number(Math.PI.toFixed(2)));
 
-// ===== Activity Logs (most recent first) =====
 const activityLogs = ref([]);
 
-// ===== Define Emits =====
+// Emit definitions for parent listeners
 const emit = defineEmits(["sliderInput", "switchChange"]);
 
-/**
- * Helper function to record an activity event at the TOP of the list.
- * e.g. "Joint D1 updated. Axis: y, Value: 1.20"
+/** 
+ * recordActivity: 
+ * 1) Insert log at the top of local array for immediate UI
+ * 2) POST to /api/logs so it's stored in MongoDB
  */
-function recordActivity(message) {
-  activityLogs.value.unshift({
+async function recordActivity(message) {
+  const newLog = {
     timestamp: new Date().toLocaleString(),
-    message,
-  });
+    message
+  };
+
+  // 1) local display
+  activityLogs.value.unshift(newLog);
+
+  // 2) Persist in DB via /api/logs
+  try {
+    const response = await fetch("http://localhost:5000/api/logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newLog),
+    });
+    const result = await response.json();
+    console.log("Log saved in DB:", result);
+  } catch (err) {
+    console.error("Error saving log:", err);
+  }
 }
 
-// ===== Switch Handler =====
-const switchChange = (e) => {
+/** 
+ * Switch Handler
+ */
+function switchChange(e) {
   emit("switchChange", e);
   recordActivity(`Mouse view controller switched ${e ? "ON" : "OFF"}`);
-};
+}
 
-// ===== Slider Handler =====
-const sliderInput = async (value, name, direction) => {
+/**
+ * Slider Handler
+ * Pass the updated slider value to the server and log it
+ */
+async function sliderInput(value, name, direction) {
   emit("sliderInput", value, name, direction);
-
-  // Record in local logs
+  
+  // log locally & in DB
   recordActivity(`Joint ${name} updated. Axis: ${direction}, Value: ${value.toFixed(2)}`);
 
-  // Send data to your backend
+  // Send slider data to your backend for real-time arm control
   const data = { name, direction, value };
   try {
-    const response = await fetch("http://localhost:3000/api/joint-values", {
+    const response = await fetch("http://localhost:5000/api/joint-values", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const result = await response.json();
-    console.log("Backend response:", result);
+    console.log("Joint values response:", result);
   } catch (error) {
-    console.error("Error sending slider data:", error);
+    console.error("Error sending joint values:", error);
   }
-};
+}
 
-// ===== Command Execution =====
-const sendCommand = async () => {
+/**
+ * Command Input Handler
+ * Log the command, then POST it to backend
+ */
+async function sendCommand() {
   if (command.value.trim() === "") {
     console.warn("Command field is empty!");
     return;
@@ -188,7 +209,7 @@ const sendCommand = async () => {
 
   recordActivity(`Command executed: "${command.value}"`);
 
-  // Send command to your backend
+  // Also send to your arm command endpoint
   const data = { command: command.value };
   try {
     const response = await fetch("http://localhost:3000/api/commands", {
@@ -197,36 +218,27 @@ const sendCommand = async () => {
       body: JSON.stringify(data),
     });
     const result = await response.json();
-    console.log("Backend response:", result);
-    command.value = ""; // Clear the command input
+    console.log("Command response:", result);
+    command.value = "";
   } catch (error) {
     console.error("Error sending command:", error);
   }
-};
+}
 </script>
 
 <style scoped>
 .slider-block {
   padding: 20px 10px;
 }
-
 .slider-item {
   margin: 20px 0;
 }
-
 .demonstration {
   margin: 0 10px 10px 0;
 }
-
-/* Activity Logs Styling */
 .activity-logs {
   margin: 2rem 0;
 }
-
-.activity-logs h2 {
-  margin-bottom: 10px;
-}
-
 .log-item {
   margin-bottom: 8px;
 }
