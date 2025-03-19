@@ -8,6 +8,7 @@
 import cv2
 import numpy as np
 import os
+from cv2 import aruco
 
 # Define the absolute path to the models directory
 models_dir = "/Users/pgherghe/Documents/SE 4450/Repo/SE4450_Team21_ArmApplication/YOLO/models"
@@ -34,9 +35,20 @@ KNOWN_WIDTH = 20.0
 # Focal length of the camera (this needs to be calibrated for your specific camera)
 FOCAL_LENGTH = 700.0
 
-def calculate_distance(knownWidth, focalLength, perWidth):
+# Calibration factor for fine-tuning the distance estimation
+CALIBRATION_FACTOR = 1.0
+
+def calculate_distance(knownWidth, focalLength, perWidth, calibrationFactor):
     # Compute and return the distance from the object to the camera
-    return (knownWidth * focalLength) / perWidth
+    return (knownWidth * focalLength * calibrationFactor) / perWidth
+
+# Define the ArUco dictionary and parameters
+aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
+parameters = aruco.DetectorParameters()
+
+# Frame skipping parameter
+FRAME_SKIP = 2
+frame_count = 0
 
 while True:
     # Capture frame-by-frame
@@ -45,6 +57,13 @@ while True:
     if not ret:
         print("Error: Could not read frame")
         break
+    
+    frame_count += 1
+    if frame_count % FRAME_SKIP != 0:
+        continue
+    
+    # Resize the frame to reduce processing time
+    frame = cv2.resize(frame, (1920, 1080))
     
     height, width, channels = frame.shape
 
@@ -89,10 +108,24 @@ while True:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             confidence = confidences[i]
-            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w)
+            distance = calculate_distance(KNOWN_WIDTH, FOCAL_LENGTH, w, CALIBRATION_FACTOR)
             color = (0, 255, 0)
             cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
             cv2.putText(frame, f"{label} {confidence:.2f} Distance: {distance:.2f} cm", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    # Detect ArUco markers in the frame
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    corners, ids, rejected = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+
+    # If markers are detected
+    if ids is not None:
+        for i in range(len(ids)):
+            # Draw the bounding box and ID of the marker
+            aruco.drawDetectedMarkers(frame, corners, ids)
+            c = corners[i][0]
+            x, y, w, h = cv2.boundingRect(c)
+            marker_id = ids[i][0]
+            cv2.putText(frame, f"Marker ID: {marker_id}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
     # Display the resulting frame
     cv2.imshow('Frame', frame)
