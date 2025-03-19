@@ -183,7 +183,7 @@ const UserManualPage = () => {
         <TOCItem onClick={() => scrollToRef(uiSetupRef)}>3. UI Platform Setup</TOCItem>
         <TOCItem onClick={() => scrollToRef(uiNavRef)}>4. UI Navigation</TOCItem>
         <TOCItem onClick={() => scrollToRef(controlInterfaceRef)}>5. Control Interface</TOCItem>
-        <TOCItem onClick={() => scrollToRef(troubleshootingRef)}>6. Troubleshooting</TOCItem>
+        <TOCItem onClick={() => scrollToRef(troubleshootingRef)}>6. Troubleshooting FAQ</TOCItem>
         <TOCItem onClick={() => scrollToRef(futureUpdatesRef)}>7. Future Updates</TOCItem>
       </TableOfContents>
 
@@ -237,7 +237,7 @@ const UserManualPage = () => {
         </Paragraph>
       </AccordionSection>
 
-      <AccordionSection title="6. Troubleshooting" innerRef={troubleshootingRef}>
+      <AccordionSection title="6. Troubleshooting FAQ" innerRef={troubleshootingRef}>
         <Table>
           <thead>
             <tr>
