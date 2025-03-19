@@ -25,3 +25,4 @@ chrome-user-data
 *.swp
 *.swo
 yolov3.weightsYOLO/models/yolov3.weights
+.DS_Store
