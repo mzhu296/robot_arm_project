@@ -130,7 +130,8 @@ const ControlPanel = () => {
     { label: '⚙️ Settings',   route: '/settings' },
     { label: '📜 Logs',       route: '/logs' },
     { label: '📖 User Manual',route: '/userManual' },
-    { label: '🎥 Video Demo', route: '/video-demo' }
+    { label: '🎥 Video Demo', route: '/video-demo' },
+    { label: ' 🏠︎ Log Out', route: '/' }
   ];
 
   const handleNavigation = (page, route) => {
