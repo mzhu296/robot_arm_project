@@ -23,4 +23,6 @@ chrome-user-data
 *.iml
 .vscode
 *.swp
-*.swo.DS_Store
+*.swo
+yolov3.weightsYOLO/models/yolov3.weights
+.DS_Store

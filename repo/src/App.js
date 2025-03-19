@@ -13,6 +13,14 @@ import ConfigurationPage from './components/ConfigurationPage';
 import WorkPage from './components/WorkPage';
 import RobotPageWrapper from './components/RobotPageWrapper';
 import SoundBar from './subComponents/SoundBar';
+import Login from './components/Login';
+import Signup from './components/Signup';
+import ControlPanel from './components/ControlPanel';
+import Settings from './components/Settings';
+import Logs from './components/Logs';
+import UserManualPage from './components/UserManual';
+import DiagnosticPanel from './components/DiagnosticPanel';
+import VideoDemoPage from './components/Video Demo';
 
 function App() {
   const location = useLocation();
@@ -46,7 +54,7 @@ function App() {
       <GlobalStyle />
 
       <ThemeProvider theme={lightTheme}>
-        <SoundBar />
+
 
         {/* Framer-motion animation on page change */}
         <AnimatePresence mode="wait">
@@ -56,6 +64,14 @@ function App() {
             <Route path="/configuration" element={<ConfigurationPage />} />
             <Route path="/work" element={<WorkPage />} />
             <Route path="/robot" element={<RobotPageWrapper />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} /> 
+            <Route path="/controlPanel" element={<ControlPanel />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/logs" element={<Logs />} />
+            <Route path="/userManual" element={<UserManualPage />} />
+            <Route path="/diagnostics" element={<DiagnosticPanel />} />
+            <Route path="/video-demo" element={<VideoDemoPage />} />
             <Route path="*" element={<Main />} />
           </Routes>
         </AnimatePresence>
