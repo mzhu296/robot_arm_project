@@ -27,7 +27,7 @@ function RobotPageWrapper() {
       )}
       <iframe
         title="VueApp"
-        src="http://localhost:3001" // URL where your Vue app is hosted
+        src="http://localhost:3000" // URL where your Vue app is hosted
         style={{
           position: 'absolute',
           top: 0,

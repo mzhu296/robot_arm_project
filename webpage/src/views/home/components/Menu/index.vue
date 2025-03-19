@@ -1,11 +1,13 @@
 <template>
   <el-scrollbar height="100%">
     <div class="slider-block">
-      <!-- Existing Slider Controls -->
+      <!-- Switch for mouse view controller -->
       <div class="slider-item">
         <span class="demonstration">Mouse view controller</span>
         <el-switch v-model="mouseValue" @change="switchChange" />
       </div>
+
+      <!-- Slider Controls for Joints -->
       <div class="slider-item">
         <span class="demonstration">Joint 1 (rotation around the Y axis)</span>
         <el-slider
@@ -17,6 +19,7 @@
           @input="sliderInput($event, 'D1', 'y')"
         />
       </div>
+
       <div class="slider-item">
         <span class="demonstration">Joint 2 (rotation around the Z axis)</span>
         <el-slider
@@ -28,6 +31,7 @@
           @input="sliderInput($event, 'D2', 'z')"
         />
       </div>
+
       <div class="slider-item">
         <span class="demonstration">Joint 3 (rotation around Z axis)</span>
         <el-slider
@@ -39,6 +43,7 @@
           @input="sliderInput($event, 'D3', 'z')"
         />
       </div>
+
       <div class="slider-item">
         <span class="demonstration">Joint 4 (rotation around Z axis)</span>
         <el-slider
@@ -50,9 +55,10 @@
           @input="sliderInput($event, 'D4', 'z')"
         />
       </div>
+
       <div class="slider-item">
         <p class="demonstration">Joint 5</p>
-        <span class="demonstration">rotation around X axis</span>
+        <span class="demonstration">Rotate around X axis</span>
         <el-slider
           v-model="value5_1"
           show-input
@@ -61,7 +67,7 @@
           :step="0.01"
           @input="sliderInput($event, 'D5', 'x')"
         />
-        <span class="demonstration">Rotate around the y axis</span>
+        <span class="demonstration">Rotate around the Y axis</span>
         <el-slider
           v-model="value5_2"
           show-input
@@ -70,7 +76,7 @@
           :step="0.01"
           @input="sliderInput($event, 'D5', 'y')"
         />
-        <span class="demonstration">Rotate around the z axis</span>
+        <span class="demonstration">Rotate around the Z axis</span>
         <el-slider
           v-model="value5_3"
           show-input
@@ -81,7 +87,7 @@
         />
       </div>
 
-      <!-- New Command Input Section -->
+      <!-- Command Input -->
       <div class="slider-item">
         <span class="demonstration">Enter Command:</span>
         <el-input
@@ -93,13 +99,24 @@
         <el-button type="primary" @click="sendCommand">Execute</el-button>
       </div>
     </div>
+
+    <!-- Local Activity Logs (optional immediate display) -->
+    <div class="activity-logs">
+      <h2>Recent Activity</h2>
+      <el-scrollbar height="200px">
+        <!-- The newest entry is displayed first (unshift in recordActivity) -->
+        <div v-for="(log, index) in activityLogs" :key="index" class="log-item">
+          <strong>{{ log.timestamp }}</strong> —
+          <span>{{ log.message }}</span>
+        </div>
+      </el-scrollbar>
+    </div>
   </el-scrollbar>
 </template>
 
 <script setup>
 import { ref, defineEmits } from "vue";
 
-// States for sliders
 const mouseValue = ref(true);
 const value1 = ref(0);
 const value2 = ref(0);
@@ -109,69 +126,104 @@ const value5_1 = ref(0);
 const value5_2 = ref(0);
 const value5_3 = ref(0);
 
-// State for command input
 const command = ref("");
 
-// Min and max for sliders
 const min = ref(Number(-Math.PI.toFixed(2)));
 const max = ref(Number(Math.PI.toFixed(2)));
 
-// Emits
+const activityLogs = ref([]);
+
+// Emit definitions for parent listeners
 const emit = defineEmits(["sliderInput", "switchChange"]);
 
-// Switch and slider handlers
-const switchChange = (e) => {
-  emit("switchChange", e);
-};
+/** 
+ * recordActivity: 
+ * 1) Insert log at the top of local array for immediate UI
+ * 2) POST to /api/logs so it's stored in MongoDB
+ */
+async function recordActivity(message) {
+  const newLog = {
+    timestamp: new Date().toLocaleString(),
+    message
+  };
 
-const sliderInput = async (e, name, direction) => {
-  emit("sliderInput", e, name, direction);
+  // 1) local display
+  activityLogs.value.unshift(newLog);
 
-  // Send slider values to the backend
-  const data = { name, direction, value: e };
-
+  // 2) Persist in DB via /api/logs
   try {
-    const response = await fetch("http://localhost:3000/api/joint-values", {
+    const response = await fetch("http://localhost:5000/api/logs", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newLog),
+    });
+    const result = await response.json();
+    console.log("Log saved in DB:", result);
+  } catch (err) {
+    console.error("Error saving log:", err);
+  }
+}
+
+/** 
+ * Switch Handler
+ */
+function switchChange(e) {
+  emit("switchChange", e);
+  recordActivity(`Mouse view controller switched ${e ? "ON" : "OFF"}`);
+}
+
+/**
+ * Slider Handler
+ * Pass the updated slider value to the server and log it
+ */
+async function sliderInput(value, name, direction) {
+  emit("sliderInput", value, name, direction);
+  
+  // log locally & in DB
+  recordActivity(`Joint ${name} updated. Axis: ${direction}, Value: ${value.toFixed(2)}`);
+
+  // Send slider data to your backend for real-time arm control
+  const data = { name, direction, value };
+  try {
+    const response = await fetch("http://localhost:5000/api/joint-values", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
     const result = await response.json();
-    console.log("Backend response:", result);
+    console.log("Joint values response:", result);
   } catch (error) {
-    console.error("Error sending data to the backend:", error);
+    console.error("Error sending joint values:", error);
   }
-};
+}
 
-// New function to handle command input
-const sendCommand = async () => {
+/**
+ * Command Input Handler
+ * Log the command, then POST it to backend
+ */
+async function sendCommand() {
   if (command.value.trim() === "") {
     console.warn("Command field is empty!");
     return;
   }
 
-  console.log(`Sending command: ${command.value}`);
-  const data = { command: command.value };
+  recordActivity(`Command executed: "${command.value}"`);
 
+  // Also send to your arm command endpoint
+  const data = { command: command.value };
   try {
     const response = await fetch("http://localhost:3000/api/commands", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-
     const result = await response.json();
-    console.log("Backend response:", result);
-    command.value = ""; // Clear the input after sending
+    console.log("Command response:", result);
+    command.value = "";
   } catch (error) {
-    console.error("Error sending command to the backend:", error);
+    console.error("Error sending command:", error);
   }
-};
+}
 </script>
 
 <style scoped>
@@ -183,5 +235,11 @@ const sendCommand = async () => {
 }
 .demonstration {
   margin: 0 10px 10px 0;
+}
+.activity-logs {
+  margin: 2rem 0;
+}
+.log-item {
+  margin-bottom: 8px;
 }
 </style>

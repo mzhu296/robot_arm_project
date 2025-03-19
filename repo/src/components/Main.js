@@ -211,7 +211,7 @@ const Main = () => {
               About our team
             </motion.h2>
           </ABOUT>
-          <ROBOTS to="/robot">
+          {/* <ROBOTS to="/robot">
             <motion.h2
               initial={{ y: 200, transition: { type: 'spring', duration: 1.5, delay: 1 } }}
               animate={{ y: 0, transition: { type: 'spring', duration: 1.5, delay: 1 } }}
@@ -220,7 +220,7 @@ const Main = () => {
             >
               Robot control
             </motion.h2>
-          </ROBOTS>
+          </ROBOTS> */}
         </BottomBar>
       </Container>
 
